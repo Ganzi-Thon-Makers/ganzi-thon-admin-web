@@ -9,7 +9,7 @@
 - **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS v4, shadcn/ui
 - **State Management**: TanStack Query (`@tanstack/react-query`), Zustand
-- **Code Quality**: ESLint, Prettier, Husky, lint-staged
+- **Code Quality**: ESLint, Prettier, Husky, lint-staged, commitlint
 - **Package Manager**: pnpm (v12.18.0 기준)
 
 ---
@@ -52,6 +52,13 @@ pnpm typecheck
 pnpm build
 ```
 
+### Git Hook 자동 검사
+
+Husky를 통해 커밋 실행 시 자동으로 코드 무결성과 메시지 규칙을 검증합니다:
+
+- **`pre-commit`**: 스테이징된 파일 대상 `lint-staged` 실행 (린트 및 포맷팅 검사/자동 수정)
+- **`commit-msg`**: 커밋 메시지 대상 `commitlint` 실행 (12종 허용 타입, `<type>: <subject>` 형식, 이슈 번호 끝자리 위치, `feat`의 '기능 추가' 차단 및 '기능 구현' 권장)
+
 ---
 
 ## 🔄 CI (Continuous Integration)
@@ -66,5 +73,6 @@ GitHub Actions 워크플로우(`.github/workflows/ci.yml`)를 통해 다음 이�
 
 ## 📚 팀 가이드 및 개발 지침
 
-- [Git 컨벤션 가이드](docs/agent-guides/git-conventions.md): 브랜치 네이밍, 커밋 메시지, PR 작성 규칙
+- [Git 컨벤션 가이드](docs/agent-guides/git-conventions.md): 브랜치 네이밍, 커밋 메시지, PR 작성 규칙 및 commitlint 자동 검사
+- [코딩 컨벤션 가이드](docs/agent-guides/coding-conventions.md): 컴포넌트 Props interface 정의 및 함수 JSDoc 주석 규칙
 - [공유 AI 스킬 가이드](docs/agent-guides/shared-skills.md): 로컬 AI 스킬(`.agents/skills/`) 운영 및 활용 지침
