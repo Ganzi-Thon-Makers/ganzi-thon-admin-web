@@ -27,3 +27,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **커밋 제목**: `feat` 커밋 제목은 `~기능 구현` 형식을 준수합니다 (예: `feat: OAuth2 기능 구현 #1`).
 - **이슈 번호**: 관련 이슈가 있을 경우 커밋 제목 끝에 ` #<이슈번호>`를 붙입니다.
 - **규칙 임의 생성 금지**: 원문에 명시되지 않은 독자적 규칙이나 임의의 타입을 발명하지 않습니다.
+
+## 공유 AI 스킬 지침 (Shared Agent Skills)
+
+프로젝트 코드 품질과 일관된 아키텍처 설계를 위해 저장소에 공유된 로컬 스킬(`.agents/skills/`)을 우선 참조합니다. 상세한 팀원 안내는 [공유 스킬 가이드](docs/agent-guides/shared-skills.md)를 참고하세요.
+
+### 작업 유형별 필수 참조 스킬
+
+| 작업 유형                                   | 필수 참조 스킬 문서                                                                                        | 핵심 지침 및 준수 사항                                                                                                                                                                               |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **React / Next.js 구현, 리뷰, 성능 최적화** | [.agents/skills/vercel-react-best-practices/SKILL.md](.agents/skills/vercel-react-best-practices/SKILL.md) | Vercel의 React/Next.js 성능 최적화 규칙 준수. 프로젝트 합의 스택인 TanStack Query를 유지하며 SWR 등으로 변경하거나 불필요한 패키지를 설치하지 말 것. Next.js 16 로컬 docs 및 React 19 호환성 최우선. |
+| **컴포넌트 API, 합성, Context 설계**        | [.agents/skills/vercel-composition-patterns/SKILL.md](.agents/skills/vercel-composition-patterns/SKILL.md) | 확장 가능한 컴포넌트 합성(Composition) 패턴 준수, Props 드릴링 방지, 단일 책임 원칙에 따른 Context 설계.                                                                                             |
