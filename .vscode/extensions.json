@@ -1,0 +1,10 @@
+{
+  // 프로젝트 작업 시 설치를 권장하는 VS Code 확장 목록
+  // 확장이 자동으로 강제 설치되는 것이 아니며, 프로젝트 환경 일치를 위해 설치 권장 목록으로 안내됩니다.
+  "recommendations": [
+    // Prettier 코드 포매터 확장
+    "esbenp.prettier-vscode",
+    // ESLint 실시간 린팅 확장
+    "dbaeumer.vscode-eslint"
+  ]
+}
