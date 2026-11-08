@@ -1,0 +1,30 @@
+name: '기타 작업 / 설정'
+description: '환경 설정, 의존성 업데이트, 리팩토링 등 기능 외 작업을 정의합니다.'
+title: '[chore] '
+labels: ['chore']
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: '작업 내용 및 목적'
+      description: '수행할 작업과 그 필요성을 간결하게 작성해주세요.'
+      placeholder: '예: 패키지 버전 업데이트 및 빌드 설정 최적화'
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: '세부 작업 목록 (To-Do)'
+      description: '작업 단계와 완료 체크리스트를 작성해주세요.'
+      placeholder: |
+        - [ ] 설정 / 패키지 변경
+        - [ ] 정상 동작 확인
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: '참고 사항 (선택)'
+      description: '관련 문서나 유의사항을 작성해주세요.'
+    validations:
+      required: false
