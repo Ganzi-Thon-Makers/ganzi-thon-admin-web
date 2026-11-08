@@ -1,0 +1,71 @@
+name: CI
+
+# CI 트리거 조건: main 브랜치 대상 PR, main 브랜치 push, 수동 실행(workflow_dispatch)
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# GITHUB_TOKEN 권한을 코드 읽기 전용으로 제한 (최소 권한 원칙 준수)
+permissions:
+  contents: read
+
+# 동일 브랜치/PR에서 새로운 커밋이 푸시되면 이전 진행 중인 CI 작업을 자동 취소하여 리소스 낭비 방지
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    # 예상치 못한 무한 대기 방지를 위한 최대 실행 시간 제한 (30분)
+    timeout-minutes: 30
+    env:
+      # CI 환경에서 Git hook(Husky) 실행 비활성화
+      HUSKY: '0'
+      # Next.js 익명 수집 데이터 전송 비활성화
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      # 저장소 코드 체크아웃 (v7.0.1 고정 SHA)
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # package.json의 packageManager(pnpm@12.18.0)를 감지하여 pnpm 설치 (v6.1.1 고정 SHA)
+      # 의존성 설치는 캐시 설정 이후 별도 단계에서 진행하므로 run_install은 false로 설정
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        with:
+          run_install: false
+
+      # Node.js 환경 구성 및 pnpm 스토어 캐시 연동 (v7.1.0 고정 SHA)
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      # lockfile 무결성을 보장하며 의존성 설치
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ESLint 기반 정적 코드 품질 및 문법 규칙 검사
+      - name: Lint
+        run: pnpm lint
+
+      # Prettier 기반 코드 서식 스타일 준수 여부 검사
+      - name: Check formatting
+        run: pnpm format:check
+
+      # Next.js 타입 생성 및 TypeScript 타입 안전성 검사
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Next.js 프로덕션 빌드 성공 여부 검사
+      - name: Build
+        run: pnpm build
