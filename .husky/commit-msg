@@ -1,0 +1,4 @@
+# Git commit 메시지 작성 직후 commitlint를 실행하여 프로젝트 커밋 컨벤션을 검증합니다.
+# pre-commit이 스테이징된 코드 품질(린트/포맷팅)을 검사한다면, commit-msg는 커밋 메시지 규칙(12종 타입, 형식, 키워드)을 검사합니다.
+# 규칙 위반(error 수준) 시 커밋 생성을 차단합니다.
+pnpm exec commitlint --edit "$1"

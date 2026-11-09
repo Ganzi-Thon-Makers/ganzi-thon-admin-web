@@ -1,0 +1,3 @@
+# Git commit 직전에 스테이징(staged)된 파일만 lint-staged로 검사 및 자동 수정합니다.
+# 린트 검사나 포맷팅 검사에 실패하면 커밋 생성을 차단합니다.
+pnpm exec lint-staged
