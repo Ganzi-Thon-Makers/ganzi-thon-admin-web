@@ -8,6 +8,38 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+
+  /* Ganzi-Thon Color Tokens */
+
+  /* Primary - Red */
+  --color-red-100: #ffedea;
+  --color-red-200: #ffcdc6;
+  --color-red-300: #ff9b8e;
+  --color-red-400: #ff5d50;
+  --color-red-500: #f60012;
+  --color-red-600: #d1000d;
+  --color-red-700: #a80008;
+  --color-red-800: #7d0004;
+  --color-red-900: #540002;
+
+  /* Neutral - Gray */
+  --color-gray-50: #f9faf9;
+  --color-gray-100: #f1f2f1;
+  --color-gray-200: #dadbda;
+  --color-gray-300: #b3b4b3;
+  --color-gray-400: #7c7d7c;
+  --color-gray-500: #5b5b5b;
+  --color-gray-600: #3c3d3c;
+  --color-gray-700: #2c2e2c;
+  --color-gray-800: #131413;
+  --color-gray-900: #0b0b0b;
+
+  /* Secondary */
+  --color-pink: #ffded9;
+
+  /* Base */
+  --color-ivory: #fbeee1;
+
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
