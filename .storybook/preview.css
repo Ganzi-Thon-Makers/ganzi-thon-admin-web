@@ -1,0 +1,13 @@
+/* Storybook 캔버스 전용 Pretendard 폰트 페이스를 정의한다. */
+@font-face {
+  font-family: Pretendard;
+  src: url('/fonts/PretendardVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+}
+
+/* 디자인 토큰의 Pretendard 폰트 패밀리 CSS 변수를 설정한다. */
+html {
+  --font-pretendard: Pretendard, Arial, sans-serif;
+}

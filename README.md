@@ -32,6 +32,20 @@ pnpm dev
 
 브라우저에서 [http://localhost:3000](http://localhost:3000) 접속하여 결과를 확인할 수 있습니다.
 
+### 3. UI 컴포넌트 갤러리 (Storybook)
+
+디자인 규격에 정의된 컴포넌트 상태를 확인하기 위한 갤러리를 제공합니다. 임의의 상태나 인터랙션 테스트 시나리오 없이 정의된 7개 갤러리(Admin / Button / TextField / Badge / Icon / Color / Typography)의 상태를 확인할 수 있습니다.
+
+```bash
+# 로컬 개발 환경 실행 (포트 6007)
+pnpm storybook
+
+# 정적 갤러리 빌드
+pnpm build-storybook
+```
+
+브라우저에서 [http://localhost:6007](http://localhost:6007) 접속하여 갤러리를 확인할 수 있습니다.
+
 ---
 
 ## 🧪 코드 품질 및 빌드 검사 명령
