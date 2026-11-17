@@ -15,8 +15,8 @@ function renderGallery() {
   return (
     <div className="flex flex-wrap gap-6 bg-gray-900 p-8">
       <ImageThumbnail state="Default" />
-      <ImageThumbnail state="Variant2" />
-      <ImageThumbnail state="Variant3" />
+      <ImageThumbnail state="Empty" />
+      <ImageThumbnail state="Editing" />
     </div>
   );
 }
@@ -25,6 +25,6 @@ export const Gallery: Story = { render: renderGallery };
 
 export const Default: Story = { args: { state: 'Default' } };
 
-export const Variant2: Story = { args: { state: 'Variant2', className: 'bg-[#2C2E2C]' } };
+export const Empty: Story = { args: { state: 'Empty', className: 'bg-[#2C2E2C]' } };
 
-export const Variant3: Story = { args: { state: 'Variant3' } };
+export const Editing: Story = { args: { state: 'Editing' } };

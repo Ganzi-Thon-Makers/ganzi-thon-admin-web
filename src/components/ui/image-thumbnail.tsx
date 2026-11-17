@@ -4,7 +4,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ImageThumbnailProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  state?: 'Default' | 'Variant2' | 'Variant3';
+  state?: 'Default' | 'Empty' | 'Editing';
   src?: string;
   alt?: string;
 }
@@ -16,8 +16,8 @@ export function ImageThumbnail({
   className,
   ...props
 }: ImageThumbnailProps) {
-  const empty = state === 'Variant2';
-  const editing = state === 'Variant3';
+  const empty = state === 'Empty';
+  const editing = state === 'Editing';
 
   return (
     <button
