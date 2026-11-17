@@ -22,7 +22,7 @@ function renderIconItemItem(item: IconItemConfig) {
 }
 
 const meta = {
-  title: '컴포넌트/아이콘',
+  title: 'Components/Icon',
   component: Icon,
   parameters: {
     layout: 'padded',
@@ -65,7 +65,7 @@ const ICON_ITEMS: IconItemConfig[] = [
 function renderGallery() {
   return (
     <div className="flex flex-col gap-6 bg-gray-900 p-8 text-white">
-      <h3 className="text-body-sb-16 text-gray-300">기본 아이콘 목록 (18종)</h3>
+      <h3 className="text-body-sb-16 text-gray-300">Icon List (18)</h3>
       <div className="grid grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-6">
         {ICON_ITEMS.map(renderIconItemItem)}
       </div>
@@ -74,6 +74,24 @@ function renderGallery() {
 }
 
 export const Gallery: Story = {
-  name: '기본 갤러리',
   render: renderGallery,
 };
+
+export const Default: Story = { args: { ...ICON_ITEMS[0], label: ICON_ITEMS[0].name } };
+export const Success: Story = { args: { ...ICON_ITEMS[1], label: ICON_ITEMS[1].name } };
+export const Error: Story = { args: { ...ICON_ITEMS[2], label: ICON_ITEMS[2].name } };
+export const ChevronDown: Story = { args: { ...ICON_ITEMS[3], label: ICON_ITEMS[3].name } };
+export const ChevronUp: Story = { args: { ...ICON_ITEMS[4], label: ICON_ITEMS[4].name } };
+export const ChevronLeft: Story = { args: { ...ICON_ITEMS[5], label: ICON_ITEMS[5].name } };
+export const ChevronRight: Story = { args: { ...ICON_ITEMS[6], label: ICON_ITEMS[6].name } };
+export const Delete: Story = { args: { ...ICON_ITEMS[7], label: ICON_ITEMS[7].name } };
+export const DotHorizontal: Story = { args: { ...ICON_ITEMS[8], label: ICON_ITEMS[8].name } };
+export const Camera: Story = { args: { ...ICON_ITEMS[9], label: ICON_ITEMS[9].name } };
+export const House: Story = { args: { ...ICON_ITEMS[10], label: ICON_ITEMS[10].name } };
+export const Card: Story = { args: { ...ICON_ITEMS[11], label: ICON_ITEMS[11].name } };
+export const Stamp: Story = { args: { ...ICON_ITEMS[12], label: ICON_ITEMS[12].name } };
+export const Cock: Story = { args: { ...ICON_ITEMS[13], label: ICON_ITEMS[13].name } };
+export const User: Story = { args: { ...ICON_ITEMS[14], label: ICON_ITEMS[14].name } };
+export const Qr: Story = { args: { ...ICON_ITEMS[15], label: ICON_ITEMS[15].name } };
+export const Up: Story = { args: { ...ICON_ITEMS[16], label: ICON_ITEMS[16].name } };
+export const Search: Story = { args: { ...ICON_ITEMS[17], label: ICON_ITEMS[17].name } };
