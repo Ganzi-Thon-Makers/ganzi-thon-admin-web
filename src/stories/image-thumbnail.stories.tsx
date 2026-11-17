@@ -2,14 +2,23 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
 import { ImageThumbnail } from '@/components/ui/image-thumbnail';
 
-const meta = { title: 'Components/ImageThumbnail', component: ImageThumbnail } satisfies Meta<
-  typeof ImageThumbnail
->;
+const meta = {
+  title: 'Components/ImageThumbnail',
+  component: ImageThumbnail,
+  parameters: {
+    layout: 'padded',
+  },
+  argTypes: {
+    onImageChange: { action: 'imageChanged' },
+  },
+} satisfies Meta<typeof ImageThumbnail>;
+
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 정의된 컴포넌트 상태를 표시합니다.
- * @returns 상태 갤러리
+/**
+ * 디자인 규격에 정의된 상태별 ImageThumbnail 컴포넌트를 보여주는 갤러리 스토리를 렌더링한다.
+ * @returns 상태별 ImageThumbnail 목록을 배치한 JSX 엘리먼트
  */
 function renderGallery() {
   return (
@@ -21,10 +30,24 @@ function renderGallery() {
   );
 }
 
-export const Gallery: Story = { render: renderGallery };
+export const Gallery: Story = {
+  render: renderGallery,
+};
 
-export const Default: Story = { args: { state: 'Default' } };
+export const Default: Story = {
+  args: {
+    state: 'Default',
+  },
+};
 
-export const Empty: Story = { args: { state: 'Empty', className: 'bg-[#2C2E2C]' } };
+export const Empty: Story = {
+  args: {
+    state: 'Empty',
+  },
+};
 
-export const Editing: Story = { args: { state: 'Editing' } };
+export const Editing: Story = {
+  args: {
+    state: 'Editing',
+  },
+};
