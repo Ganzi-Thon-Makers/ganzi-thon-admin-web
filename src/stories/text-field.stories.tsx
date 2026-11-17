@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
 
 const meta = {
-  title: '컴포넌트/텍스트 필드',
+  title: 'Components/TextField',
   component: TextField,
   parameters: {
     layout: 'padded',
@@ -86,6 +86,56 @@ function renderGallery() {
 }
 
 export const Gallery: Story = {
-  name: '기본 갤러리',
   render: renderGallery,
+};
+
+export const Default: Story = {
+  args: {
+    'aria-label': 'default',
+    visualState: 'default',
+    placeholder: 'text',
+    leadingIcon: <Icon name="default" />,
+    trailingIcon: <Icon name="default" />,
+  },
+};
+
+export const Typed: Story = {
+  args: {
+    'aria-label': 'typed',
+    visualState: 'typed',
+    defaultValue: 'text',
+    leadingIcon: <Icon name="default" />,
+    trailingIcon: <Icon name="default" />,
+  },
+};
+
+export const Focused: Story = {
+  args: {
+    'aria-label': 'focused',
+    visualState: 'focused',
+    defaultValue: 'text',
+    leadingIcon: <Icon name="default" />,
+    trailingIcon: <Icon name="default" />,
+  },
+};
+
+export const Error: Story = {
+  args: {
+    'aria-label': 'error',
+    visualState: 'error',
+    defaultValue: 'text',
+    errorMessage: 'text',
+    leadingIcon: <Icon name="default" />,
+    trailingIcon: <Icon name="default" />,
+  },
+};
+
+export const Entered: Story = {
+  args: {
+    'aria-label': 'entered',
+    visualState: 'entered',
+    defaultValue: 'text',
+    leadingIcon: <Icon name="default" />,
+    trailingIcon: <Icon name="default" />,
+  },
 };
