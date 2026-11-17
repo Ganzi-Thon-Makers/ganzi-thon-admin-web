@@ -94,7 +94,7 @@ function renderColorItem(color: ColorToken) {
 }
 
 const meta = {
-  title: '파운데이션/컬러',
+  title: 'Foundations/Color',
   parameters: {
     layout: 'padded',
   },
@@ -125,6 +125,5 @@ function renderGallery() {
 }
 
 export const Gallery: Story = {
-  name: '기본 갤러리',
   render: renderGallery,
 };

@@ -231,7 +231,7 @@ function renderTypographyItem(token: TypographyToken) {
 }
 
 const meta = {
-  title: '파운데이션/타이포그래피',
+  title: 'Foundations/Typography',
   parameters: {
     layout: 'padded',
   },
@@ -261,6 +261,5 @@ function renderGallery() {
 }
 
 export const Gallery: Story = {
-  name: '기본 갤러리',
   render: renderGallery,
 };
