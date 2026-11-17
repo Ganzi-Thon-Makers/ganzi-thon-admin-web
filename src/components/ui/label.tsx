@@ -1,10 +1,10 @@
 'use client';
 
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '@/lib/utils';
 
-export interface LabelProps extends React.ComponentProps<'label'> {
+export interface LabelProps extends ComponentProps<'label'> {
   /** 추가 클래스명 */
   className?: string;
 }

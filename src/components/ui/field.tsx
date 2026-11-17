@@ -1,7 +1,7 @@
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -20,8 +20,7 @@ const fieldVariants = cva('group/field flex w-full gap-2 data-[invalid=true]:tex
   },
 });
 
-export interface FieldProps
-  extends React.ComponentProps<'div'>, VariantProps<typeof fieldVariants> {
+export interface FieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldVariants> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -50,7 +49,7 @@ export function Field({ className, orientation = 'vertical', ...props }: FieldPr
   );
 }
 
-export interface FieldLabelProps extends React.ComponentProps<typeof Label> {
+export interface FieldLabelProps extends ComponentProps<typeof Label> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -71,7 +70,7 @@ export function FieldLabel({ className, ...props }: FieldLabelProps) {
   );
 }
 
-export interface FieldDescriptionProps extends React.ComponentProps<'p'> {
+export interface FieldDescriptionProps extends ComponentProps<'p'> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -97,7 +96,7 @@ export interface FieldErrorItem {
   message?: string;
 }
 
-export interface FieldErrorProps extends React.ComponentProps<'div'> {
+export interface FieldErrorProps extends ComponentProps<'div'> {
   /** 에러 메시지 목록 객체 배열 */
   errors?: Array<FieldErrorItem | undefined>;
 }
@@ -123,7 +122,7 @@ export function FieldError({ className, children, errors, ...props }: FieldError
    * @param index 오류 항목 인덱스
    * @returns 렌더링된 li 엘리먼트 또는 null
    */
-  const renderErrorItem = (error: FieldErrorItem | undefined, index: number): React.ReactNode => {
+  const renderErrorItem = (error: FieldErrorItem | undefined, index: number): ReactNode => {
     if (!error?.message) {
       return null;
     }
@@ -134,7 +133,7 @@ export function FieldError({ className, children, errors, ...props }: FieldError
    * children 속성 또는 오류 목록을 기반으로 표시할 오류 콘텐츠 노드를 계산한다.
    * @returns 렌더링할 React 노드 또는 null
    */
-  const computeErrorContent = (): React.ReactNode => {
+  const computeErrorContent = (): ReactNode => {
     if (children) {
       return children;
     }

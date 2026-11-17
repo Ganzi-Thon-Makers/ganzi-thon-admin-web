@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import * as React from 'react';
+import { type HTMLAttributes, type MouseEvent, type ReactNode, useState } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ export interface SidebarNavItem {
   iconSize?: number;
 }
 
-export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
+export interface SidebarProps extends HTMLAttributes<HTMLElement> {
   /** 사이드바 역할 변형 (기본값: `'admin'`) */
   variant?: SidebarVariant;
   /** 현재 활성화된 메뉴 ID */
@@ -149,7 +149,7 @@ export function Sidebar({
   customNavItems,
   ...props
 }: SidebarProps) {
-  const [internalActiveId, setInternalActiveId] = React.useState<string>(activeMenuId ?? '');
+  const [internalActiveId, setInternalActiveId] = useState<string>(activeMenuId ?? '');
 
   const currentActiveId = activeMenuId ?? internalActiveId;
 
@@ -168,7 +168,7 @@ export function Sidebar({
    * 로그아웃 버튼 클릭 이벤트를 처리하고 외부 onLogout 콜백을 호출합니다.
    * @param event 버튼 클릭 마우스 이벤트 객체
    */
-  const handleLogoutClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleLogoutClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     onLogout?.();
   };
@@ -178,7 +178,7 @@ export function Sidebar({
    * @param item 내비게이션 아이템 정보 객체
    * @returns 렌더링된 컴포넌트 노드
    */
-  const renderNavItem = (item: SidebarNavItem): React.ReactNode => {
+  const renderNavItem = (item: SidebarNavItem): ReactNode => {
     return (
       <SidebarNavItemButton
         key={item.id}

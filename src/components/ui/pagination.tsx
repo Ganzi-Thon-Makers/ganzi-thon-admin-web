@@ -1,11 +1,11 @@
 'use client';
 
-import * as React from 'react';
+import type { HTMLAttributes } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 
-export interface PaginationProps extends React.HTMLAttributes<HTMLElement> {
+export interface PaginationProps extends HTMLAttributes<HTMLElement> {
   /** 전체 페이지 수 */
   pageCount: number;
   /** 현재 페이지 번호 */

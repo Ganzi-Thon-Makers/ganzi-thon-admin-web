@@ -1,12 +1,12 @@
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentProps, MouseEvent } from 'react';
 
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export interface InputGroupProps extends React.ComponentProps<'div'> {
+export interface InputGroupProps extends ComponentProps<'div'> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -52,7 +52,7 @@ const inputGroupAddonVariants = cva(
 );
 
 export interface InputGroupAddonProps
-  extends React.ComponentProps<'div'>, VariantProps<typeof inputGroupAddonVariants> {
+  extends ComponentProps<'div'>, VariantProps<typeof inputGroupAddonVariants> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -72,7 +72,7 @@ export function InputGroupAddon({
    * 애드온 영역 클릭 시 버튼이 아니면 인접 인풋 요소로 포커스를 이동하고 외부 onClick을 실행한다.
    * @param event 마우스 클릭 이벤트 객체
    */
-  const handleAddonClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleAddonClick = (event: MouseEvent<HTMLDivElement>) => {
     onClick?.(event);
     if (event.defaultPrevented) {
       return;
@@ -95,7 +95,7 @@ export function InputGroupAddon({
   );
 }
 
-export interface InputGroupTextProps extends React.ComponentProps<'span'> {
+export interface InputGroupTextProps extends ComponentProps<'span'> {
   /** 추가 클래스명 */
   className?: string;
 }
@@ -115,7 +115,7 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps) {
   );
 }
 
-export interface InputGroupInputProps extends React.ComponentProps<'input'> {
+export interface InputGroupInputProps extends ComponentProps<'input'> {
   /** 추가 클래스명 */
   className?: string;
 }

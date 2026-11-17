@@ -2,7 +2,7 @@
 
 import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
@@ -101,7 +101,7 @@ export interface AccordionTriggerProps
   /** 화살표(Chevron) 아이콘 표시 여부 (기본값: true) */
   showChevron?: boolean;
   /** 자식 요소 */
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**
@@ -143,7 +143,7 @@ export interface AccordionContentProps extends AccordionPrimitive.Panel.Props {
   /** 내부 콘텐츠 래퍼 추가 클래스명 */
   contentClassName?: string;
   /** 자식 요소 */
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**
@@ -177,7 +177,7 @@ export function AccordionContent({
   );
 }
 
-export interface AccordionListItemProps extends React.ComponentProps<'div'> {
+export interface AccordionListItemProps extends ComponentProps<'div'> {
   /** 추가 클래스명 */
   className?: string;
 }

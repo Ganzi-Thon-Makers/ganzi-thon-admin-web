@@ -1,11 +1,11 @@
 'use client';
 
 import { Input as InputPrimitive } from '@base-ui/react/input';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '@/lib/utils';
 
-export interface InputProps extends React.ComponentProps<'input'> {
+export interface InputProps extends ComponentProps<'input'> {
   /** 추가 클래스명 */
   className?: string;
 }

@@ -1,12 +1,19 @@
 'use client';
 
-import * as React from 'react';
+import {
+  type ChangeEvent,
+  type ComponentProps,
+  type FocusEvent,
+  type ReactNode,
+  useId,
+  useState,
+} from 'react';
 
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { cn } from '@/lib/utils';
 
-export interface TextFieldProps extends Omit<React.ComponentProps<'input'>, 'size'> {
+export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'size'> {
   /** 입력 필드 상단 레이블 */
   label?: string;
   /** 오류 발생 시 표시할 에러 메시지 */
@@ -16,9 +23,9 @@ export interface TextFieldProps extends Omit<React.ComponentProps<'input'>, 'siz
   /** 강제 시각 상태 (`'default'` / `'typed'` / `'focused'` / `'error'` / `'entered'`) */
   visualState?: 'default' | 'typed' | 'focused' | 'error' | 'entered';
   /** 입력 필드 좌측 아이콘 */
-  leadingIcon?: React.ReactNode;
+  leadingIcon?: ReactNode;
   /** 입력 필드 우측 아이콘 */
-  trailingIcon?: React.ReactNode;
+  trailingIcon?: ReactNode;
   /** 전체 컨테이너 요소 클래스명 */
   containerClassName?: string;
   /** 입력창 박스 요소 클래스명 */
@@ -61,12 +68,12 @@ export function TextField({
   ref,
   ...props
 }: TextFieldProps) {
-  const generatedId = React.useId();
+  const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
 
-  const [isFocused, setIsFocused] = React.useState(false);
-  const [internalValue, setInternalValue] = React.useState(String(value ?? defaultValue ?? ''));
+  const [isFocused, setIsFocused] = useState(false);
+  const [internalValue, setInternalValue] = useState(String(value ?? defaultValue ?? ''));
 
   const currentValue = value !== undefined ? String(value) : internalValue;
   const hasValue = currentValue.length > 0;
@@ -82,7 +89,7 @@ export function TextField({
    * 입력 필드 포커스 시 포커스 상태를 활성화하고 외부 콜백을 호출한다.
    * @param event 포커스 이벤트 객체
    */
-  const handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+  const handleInputFocus = (event: FocusEvent<HTMLInputElement>) => {
     setIsFocused(true);
     onFocus?.(event);
   };
@@ -91,7 +98,7 @@ export function TextField({
    * 입력 필드 블러 시 포커스 상태를 해제하고 외부 콜백을 호출한다.
    * @param event 포커스 해제 이벤트 객체
    */
-  const handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+  const handleInputBlur = (event: FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
     onBlur?.(event);
   };
@@ -100,7 +107,7 @@ export function TextField({
    * 입력 필드 내용 변경 시 내부 상태를 동기화하고 외부 onChange를 호출한다.
    * @param event 인풋 변경 이벤트 객체
    */
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (value === undefined) {
       setInternalValue(event.target.value);
     }

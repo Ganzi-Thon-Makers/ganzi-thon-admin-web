@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -20,9 +20,9 @@ const boothButtonVariants = cva(
 );
 
 export interface BoothButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof boothButtonVariants> {
+  extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof boothButtonVariants> {
   /** 버튼에 표시할 서비스 이름 */
-  children: React.ReactNode;
+  children: ReactNode;
   /** 추가 클래스명 */
   className?: string;
 }

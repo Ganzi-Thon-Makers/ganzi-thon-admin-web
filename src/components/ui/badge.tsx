@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -34,7 +34,7 @@ const badgeVariants = cva(
 export type BadgeColor = 'red' | 'ivory' | 'none';
 
 export interface BadgeProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>, VariantProps<typeof badgeVariants> {
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'color'>, VariantProps<typeof badgeVariants> {
   /** 추가 클래스명 */
   className?: string;
   /** 뱃지 색상 (`'red'` / `'ivory'` / `'none'`) */
