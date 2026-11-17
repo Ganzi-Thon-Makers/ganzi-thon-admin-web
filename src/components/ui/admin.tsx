@@ -64,7 +64,7 @@ function AdminNavItemButton({ item, isActive, onSelect }: AdminNavItemButtonProp
         'flex w-54 shrink-0 cursor-pointer items-center gap-3 rounded-md p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isActive
           ? 'bg-red-500 text-white hover:bg-red-500 active:bg-red-500'
-          : 'text-white hover:bg-gray-700/60 active:bg-gray-700',
+          : 'bg-transparent text-white hover:bg-gray-700 active:bg-gray-700',
       )}
     >
       <Icon name={item.icon} size={item.iconSize} />
