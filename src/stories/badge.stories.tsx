@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Badge } from '@/components/ui/badge';
 
 const meta = {
-  title: '컴포넌트/뱃지',
+  title: 'Components/Badge',
   component: Badge,
   parameters: {
     layout: 'padded',
@@ -87,6 +87,68 @@ function renderGallery() {
 }
 
 export const Gallery: Story = {
-  name: '기본 갤러리',
   render: renderGallery,
+};
+
+export const RedMedium: Story = {
+  args: {
+    children: 'WEB',
+    color: 'red',
+    size: 'medium',
+    variant: 'primary',
+  },
+};
+
+export const NoneMedium: Story = {
+  args: {
+    children: 'WEB',
+    color: 'none',
+    size: 'medium',
+    variant: 'secondary',
+  },
+};
+
+export const IvoryMedium: Story = {
+  args: {
+    children: 'APP',
+    color: 'ivory',
+    size: 'medium',
+    variant: 'primary',
+  },
+};
+
+export const RedSmall: Story = {
+  args: {
+    children: 'APP',
+    color: 'red',
+    size: 'small',
+    variant: 'primary',
+  },
+};
+
+export const NoneSmall: Story = {
+  args: {
+    children: 'APP',
+    color: 'none',
+    size: 'small',
+    variant: 'secondary',
+  },
+};
+
+export const IvorySmall: Story = {
+  args: {
+    children: 'APP',
+    color: 'ivory',
+    size: 'small',
+    variant: 'primary',
+  },
+};
+
+export const NoneXsmall: Story = {
+  args: {
+    children: 'APP',
+    color: 'none',
+    size: 'xsmall',
+    variant: 'secondary',
+  },
 };
