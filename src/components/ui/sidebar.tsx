@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils';
 /**
  * 관리자 사이드바 역할 변형 타입
  */
-export type AdminVariant = 'sidebar' | 'superadmin';
+export type SidebarVariant = 'admin' | 'superadmin';
 
-export interface AdminNavItem {
+export interface SidebarNavItem {
   /** 메뉴 고유 식별자 */
   id: string;
   /** 메뉴 표시 이름 */
@@ -22,9 +22,9 @@ export interface AdminNavItem {
   iconSize?: number;
 }
 
-export interface AdminProps extends React.HTMLAttributes<HTMLElement> {
-  /** 사이드바 역할 변형 (기본값: `'sidebar'`) */
-  variant?: AdminVariant;
+export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
+  /** 사이드바 역할 변형 (기본값: `'admin'`) */
+  variant?: SidebarVariant;
   /** 현재 활성화된 메뉴 ID */
   activeMenuId?: string;
   /** 메뉴 항목 선택 콜백 */
@@ -32,12 +32,12 @@ export interface AdminProps extends React.HTMLAttributes<HTMLElement> {
   /** 로그아웃 클릭 콜백 */
   onLogout?: () => void;
   /** 커스텀 메뉴 항목 목록 */
-  customNavItems?: AdminNavItem[];
+  customNavItems?: SidebarNavItem[];
 }
 
-interface AdminNavItemButtonProps {
+interface SidebarNavItemButtonProps {
   /** 내비게이션 아이템 정보 */
-  item: AdminNavItem;
+  item: SidebarNavItem;
   /** 활성화 여부 */
   isActive: boolean;
   /** 메뉴 선택 콜백 */
@@ -47,7 +47,7 @@ interface AdminNavItemButtonProps {
 /**
  * 관리자 사이드바의 개별 내비게이션 메뉴 버튼 컴포넌트입니다.
  */
-function AdminNavItemButton({ item, isActive, onSelect }: AdminNavItemButtonProps) {
+function SidebarNavItemButton({ item, isActive, onSelect }: SidebarNavItemButtonProps) {
   /**
    * 메뉴 버튼 클릭 시 부모 콜백으로 메뉴 ID를 전달합니다.
    */
@@ -76,7 +76,7 @@ function AdminNavItemButton({ item, isActive, onSelect }: AdminNavItemButtonProp
 }
 
 /** 부스 관리자 기본 내비게이션 메뉴 목록 */
-const SIDEBAR_NAV_ITEMS: AdminNavItem[] = [
+const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   {
     id: 'users',
     label: '사용자',
@@ -96,7 +96,7 @@ const SIDEBAR_NAV_ITEMS: AdminNavItem[] = [
 ];
 
 /** 슈퍼 관리자 기본 내비게이션 메뉴 목록 */
-const SUPERADMIN_NAV_ITEMS: AdminNavItem[] = [
+const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
   {
     id: 'users',
     label: '사용자 관리',
@@ -126,29 +126,29 @@ const SUPERADMIN_NAV_ITEMS: AdminNavItem[] = [
 ];
 
 /**
- * 부스 관리자와 슈퍼 관리자 역할을 지원하는 공용 Admin 사이드바 컴포넌트입니다.
+ * 부스 관리자와 슈퍼 관리자 역할을 지원하는 공용 Sidebar 컴포넌트입니다.
  *
  * 전달된 variant에 따라 기본 내비게이션 메뉴와 브랜드 로고를 다르게 렌더링하며,
  * 메뉴 선택 및 로그아웃 이벤트를 상위로 전달합니다.
  *
  * @example
  * ```tsx
- * <Admin
+ * <Sidebar
  *   variant="sidebar"
  *   activeMenuId="users"
  *   onSelectMenu={(id) => console.log(id)}
  * />
  * ```
  */
-export function Admin({
+export function Sidebar({
   className,
-  variant = 'sidebar',
+  variant = 'admin',
   activeMenuId,
   onSelectMenu,
   onLogout,
   customNavItems,
   ...props
-}: AdminProps) {
+}: SidebarProps) {
   const [internalActiveId, setInternalActiveId] = React.useState<string>(activeMenuId ?? '');
 
   const currentActiveId = activeMenuId ?? internalActiveId;
@@ -178,9 +178,9 @@ export function Admin({
    * @param item 내비게이션 아이템 정보 객체
    * @returns 렌더링된 컴포넌트 노드
    */
-  const renderNavItem = (item: AdminNavItem): React.ReactNode => {
+  const renderNavItem = (item: SidebarNavItem): React.ReactNode => {
     return (
-      <AdminNavItemButton
+      <SidebarNavItemButton
         key={item.id}
         item={item}
         isActive={currentActiveId === item.id}
@@ -240,7 +240,7 @@ export function Admin({
                     : 'flex-none -scale-y-100',
                 )}
               >
-                {variant === 'sidebar' ? (
+                {variant === 'admin' ? (
                   <div className="relative h-[15.359px] w-[61px]">
                     <Image
                       src="/admin/admin_black_vector.svg"
@@ -305,4 +305,4 @@ export function Admin({
   );
 }
 
-export default Admin;
+export default Sidebar;
