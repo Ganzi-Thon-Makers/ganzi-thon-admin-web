@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 /** Storybook 환경 설정 객체 */
 const config: StorybookConfig = {
-  stories: ['../src/stories/**/*.stories.tsx'],
+  stories: ['../src/stories/**/*.stories.tsx', '../src/components/ui/**/*.stories.tsx'],
   addons: [],
   framework: {
     name: '@storybook/nextjs-vite',
