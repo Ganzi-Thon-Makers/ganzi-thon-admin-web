@@ -97,6 +97,7 @@ export function UserDetailView({ user, role }: UserDetailViewProps) {
               <DetailItem label="PWD">
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span aria-label="비밀번호는 보안상 표시하지 않습니다">••••••••</span>
+                  <span aria-hidden="true">·</span>
                   <span className="text-title-m-20 text-gray-100">변경 시 새 비밀번호 입력</span>
                 </span>
               </DetailItem>
