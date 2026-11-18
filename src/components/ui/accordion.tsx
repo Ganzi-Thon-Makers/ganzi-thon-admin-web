@@ -123,11 +123,11 @@ export function AccordionTrigger({
       >
         <span className="flex-1 truncate">{children}</span>
         {showChevron && (
-          <span data-slot="accordion-chevron" className="ml-2 shrink-0">
-            <span className="inline-block group-data-[panel-open]/trigger:hidden group-data-open/trigger:hidden">
+          <span data-slot="accordion-chevron" className="ml-2 flex shrink-0 items-center">
+            <span className="flex group-data-[panel-open]/trigger:hidden group-data-open/trigger:hidden">
               <Icon name="chevron-down" size={24} label="열기 토글" />
             </span>
-            <span className="hidden group-data-[panel-open]/trigger:inline-block group-data-open/trigger:inline-block">
+            <span className="hidden group-data-[panel-open]/trigger:flex group-data-open/trigger:flex">
               <Icon name="chevron-up" size={24} label="닫기 토글" />
             </span>
           </span>
