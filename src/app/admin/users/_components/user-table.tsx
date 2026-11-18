@@ -44,19 +44,19 @@ export function UserTable({ users, onViewDetails }: UserTableProps) {
     }
 
     return (
-      <tr key={user.id} className="h-[72px] align-middle text-body-r-16 text-gray-100">
+      <tr key={user.id} className="h-[72px] bg-gray-800 align-middle text-body-r-16 text-gray-100">
         <th scope="row" className="px-6 text-left text-body-sb-16 text-gray-50">
           {user.name}
         </th>
         <td className="px-6 text-left">{user.school}</td>
         <td className="px-6 text-left">{user.phoneNumber}</td>
         <td className="px-6 text-left">
-          <span className={user.hasEnteredLuckyDraw ? 'text-red-500' : 'text-gray-400'}>
+          <span className={user.hasEnteredLuckyDraw ? 'text-red-400' : 'text-gray-400'}>
             {user.hasEnteredLuckyDraw ? '응모 완료' : '미응모'}
           </span>
         </td>
         <td className="px-6 text-left">
-          <span className={user.hasCompletedCourse ? 'text-red-500' : 'text-gray-400'}>
+          <span className={user.hasCompletedCourse ? 'text-red-400' : 'text-gray-400'}>
             {user.hasCompletedCourse ? '수료 완료' : '미수료'}
           </span>
         </td>
@@ -110,7 +110,7 @@ export function UserTable({ users, onViewDetails }: UserTableProps) {
           <th scope="col" className="px-6 font-medium" aria-label="상세 보기" />
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-800">
+      <tbody>
         {users.length > 0 ? (
           users.map(renderUserRow)
         ) : (
