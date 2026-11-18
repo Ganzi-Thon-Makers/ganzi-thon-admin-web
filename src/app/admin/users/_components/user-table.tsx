@@ -44,7 +44,7 @@ export function UserTable({ users, onViewDetails }: UserTableProps) {
     }
 
     return (
-      <tr key={user.id} className="h-[112px] text-body-r-16 text-gray-100">
+      <tr key={user.id} className="h-[72px] align-middle text-body-r-16 text-gray-100">
         <th scope="row" className="px-6 text-left text-body-sb-16 text-gray-50">
           {user.name}
         </th>

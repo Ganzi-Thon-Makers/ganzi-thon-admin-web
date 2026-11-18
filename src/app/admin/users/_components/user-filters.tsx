@@ -9,6 +9,7 @@ import {
   AccordionListItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
 
@@ -89,15 +90,15 @@ export function UserFilters({
   }
 
   return (
-    <section aria-label="사용자 검색 및 필터" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-4">
+    <section aria-label="사용자 검색 및 필터" className="flex flex-col gap-7">
+      <div className="flex flex-wrap items-center gap-3">
         <TextField
           aria-label="이름 검색"
           placeholder="이름으로 검색하세요."
           value={searchTerm}
           onChange={handleSearchTermChange}
           leadingIcon={<Icon name="search" size={24} label="검색" />}
-          containerClassName="min-w-[280px] flex-1"
+          containerClassName="w-full min-w-0 sm:w-[480px] sm:max-w-full sm:shrink-0"
           inputWrapperClassName="h-12 rounded-[4px] bg-gray-800"
           className="text-gray-50 placeholder:text-gray-400"
         />
@@ -118,7 +119,7 @@ export function UserFilters({
             </AccordionTrigger>
             <AccordionContent
               className="absolute top-full left-0 z-50 h-auto w-full overflow-visible"
-              contentClassName="gap-0 rounded-md border border-gray-700 bg-gray-900 px-4 py-2"
+              contentClassName="gap-0 rounded-md bg-gray-900 px-4 py-2"
             >
               <AccordionListItem className="h-12 border-gray-700 text-gray-100">
                 <label className="flex w-full cursor-pointer items-center">
@@ -170,7 +171,7 @@ export function UserFilters({
             </AccordionTrigger>
             <AccordionContent
               className="absolute top-full left-0 z-50 h-auto w-full overflow-visible"
-              contentClassName="gap-0 rounded-md border border-gray-700 bg-gray-900 px-4 py-2"
+              contentClassName="gap-0 rounded-md bg-gray-900 px-4 py-2"
             >
               <AccordionListItem className="h-12 border-gray-700 text-gray-100">
                 <label className="flex w-full cursor-pointer items-center">
@@ -210,31 +211,31 @@ export function UserFilters({
       {luckyDrawFilter !== 'all' || completionFilter !== 'all' ? (
         <div aria-label="적용된 필터" className="flex flex-wrap gap-2">
           {luckyDrawFilter !== 'all' ? (
-            <span className="inline-flex h-10 items-center gap-3 rounded-[4px] bg-red-500 px-3 text-body-sb-14 text-static-white">
+            <Badge color="red" size="medium" className="h-8 gap-2 px-3 py-0 text-body-sb-14">
               {luckyDrawFilter === 'yes' ? '응모 완료' : '미응모'}
               <button
                 type="button"
                 onClick={handleClearLuckyDrawFilter}
                 aria-label="응모 여부 필터 해제"
-                className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-static-white"
+                className="flex size-6 cursor-pointer items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-static-white"
               >
-                <Icon name="delete" size={20} label="해제" />
+                <Icon name="delete" size={24} label="해제" />
               </button>
-            </span>
+            </Badge>
           ) : null}
 
           {completionFilter !== 'all' ? (
-            <span className="inline-flex h-10 items-center gap-3 rounded-[4px] bg-red-500 px-3 text-body-sb-14 text-static-white">
+            <Badge color="red" size="medium" className="h-8 gap-2 px-3 py-0 text-body-sb-14">
               {completionFilter === 'yes' ? '수료 완료' : '미수료'}
               <button
                 type="button"
                 onClick={handleClearCompletionFilter}
                 aria-label="수료 여부 필터 해제"
-                className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-static-white"
+                className="flex size-6 cursor-pointer items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-static-white"
               >
-                <Icon name="delete" size={20} label="해제" />
+                <Icon name="delete" size={24} label="해제" />
               </button>
-            </span>
+            </Badge>
           ) : null}
         </div>
       ) : null}

@@ -8,7 +8,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { UserFilters, type UserStatusFilter } from './user-filters';
 import { UserTable, type UserTableItem } from './user-table';
 
-const USERS_PER_PAGE = 10;
+const USERS_PER_PAGE = 8;
 
 export interface UserListClientProps {
   /** 검색 및 필터할 사용자 원본 목록 */
@@ -167,8 +167,8 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start gap-4">
+    <div className="flex flex-col">
+      <div className={`flex flex-wrap items-start gap-4 ${hasStatusFilter ? 'mb-2' : 'mb-7'}`}>
         <div className="min-w-0 flex-1">
           <UserFilters
             searchTerm={searchTerm}
@@ -187,7 +187,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
             size="sm"
             disabled={!hasStatusFilter || filteredUsers.length === 0}
             onClick={handleDownloadUsers}
-            className={`h-12 rounded-[4px] px-6 text-body-sb-16 text-static-white enabled:cursor-pointer ${
+            className={`h-12 w-40 rounded-[4px] px-6 text-body-sb-16 text-static-white enabled:cursor-pointer ${
               hasStatusFilter && filteredUsers.length > 0
                 ? 'bg-gray-700 hover:bg-gray-700 active:bg-gray-700'
                 : 'disabled:bg-gray-300 disabled:text-static-white'
@@ -201,7 +201,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
             size="sm"
             aria-disabled="true"
             aria-describedby="user-add-unavailable"
-            className="h-12 rounded-[4px] bg-red-500 px-6 text-body-sb-16 text-static-white hover:bg-red-500 active:bg-red-500 aria-disabled:cursor-not-allowed"
+            className="h-12 w-40 rounded-[4px] bg-red-500 px-6 text-body-sb-16 text-static-white hover:bg-red-500 active:bg-red-500 aria-disabled:cursor-not-allowed"
           >
             사용자 추가
           </Button>
@@ -211,7 +211,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="mb-7 overflow-x-auto">
         <UserTable users={paginatedUsers} onViewDetails={onViewDetails} />
       </div>
 
@@ -220,7 +220,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
           pageCount={pageCount}
           page={currentPage}
           onPageChange={handlePageChange}
-          className="justify-center py-2 [&_button:disabled]:cursor-not-allowed [&_button:not(:disabled)]:cursor-pointer"
+          className="justify-center [&_button:disabled]:cursor-not-allowed [&_button:not(:disabled)]:cursor-pointer"
         />
       ) : null}
     </div>
