@@ -1,8 +1,16 @@
 import Image from 'next/image';
+import { Suspense } from 'react';
 
 import { LoginForm } from '@/app/_components/login-form';
 import { Header } from '@/components/layout/header';
 import { PageGrid } from '@/components/layout/page-grid';
+import { getServerAuthSession } from '@/lib/auth/cookies';
+
+async function SessionLoginForm() {
+  const { role } = await getServerAuthSession();
+
+  return <LoginForm initialRole={role} />;
+}
 
 export default function Home() {
   return (
@@ -16,7 +24,9 @@ export default function Home() {
               <Image alt="" height={90} priority src="/admin/logo_favicon.svg" width={109} />
             </div>
 
-            <LoginForm />
+            <Suspense fallback={null}>
+              <SessionLoginForm />
+            </Suspense>
           </div>
         </PageGrid>
       </main>

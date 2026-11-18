@@ -17,6 +17,7 @@ import type { BackofficeRole, LoginFormState } from '@/lib/auth/types';
 
 interface LoginFormProps {
   errorMessage?: string;
+  initialRole: BackofficeRole | null;
 }
 
 interface SessionFeedbackState {
@@ -33,7 +34,7 @@ const INITIAL_LOGIN_FORM_STATE: LoginFormState = {
  *
  * 로그인 / 세션 갱신 / 로그아웃 Server Action과 연동해 폼 입력과 인증 완료 화면을 전환합니다.
  */
-export function LoginForm({ errorMessage }: LoginFormProps) {
+export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [dismissedActionError, setDismissedActionError] = useState(false);
@@ -49,9 +50,11 @@ export function LoginForm({ errorMessage }: LoginFormProps) {
 
   const isPending = isLoginPending || isSessionPending;
   const canLogin = username.trim().length > 0 && password.trim().length > 0;
+  const serverRole = actionState.status === 'idle' ? initialRole : null;
   const isAuthenticated =
-    !loggedOut && actionState.status === 'success' && Boolean(actionState.role);
-  const activeRole = refreshedRole ?? actionState.role ?? null;
+    !loggedOut &&
+    ((actionState.status === 'success' && Boolean(actionState.role)) || Boolean(serverRole));
+  const activeRole = refreshedRole ?? actionState.role ?? serverRole;
 
   const actionErrorMessage =
     !dismissedActionError && actionState.status === 'error' ? actionState.errorMessage : undefined;
@@ -201,7 +204,9 @@ export function LoginForm({ errorMessage }: LoginFormProps) {
             </Badge>
           </div>
           <p className="text-body-r-14 text-gray-200">
-            <span className="font-semibold text-white">{actionState.loginId ?? username}</span>{' '}
+            <span className="font-semibold text-white">
+              {actionState.loginId || username || '관리자'}
+            </span>{' '}
             계정의 인증 토큰이 서버 보안 쿠키에 저장되었습니다.
           </p>
         </div>
