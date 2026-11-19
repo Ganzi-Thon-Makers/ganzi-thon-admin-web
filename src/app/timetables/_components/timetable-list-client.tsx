@@ -15,7 +15,7 @@ export interface TimetableListClientProps {
 }
 
 /**
- * 응답 본문을 JSON으로 읽고 실패하면 null을 반환합니다.
+ * 응답 본문을 JSON으로 읽고 실패하면 null을 반환한다.
  * @param response 내부 API 응답
  * @returns 파싱된 본문 또는 null
  */
@@ -30,7 +30,7 @@ async function parseJsonSafely(
 }
 
 /**
- * 인증된 내부 API에서 일정 목록을 조회합니다.
+ * 인증된 내부 API에서 일정 목록을 조회한다.
  * @param context 쿼리 취소 신호를 담은 컨텍스트
  * @returns 시간 순서로 정렬된 일정 목록
  */
@@ -66,7 +66,7 @@ export function TimetableListClient({
   const errorMessage = error?.message ?? (data === undefined ? initialErrorMessage : undefined);
 
   /**
-   * 실패한 일정 조회를 다시 요청합니다.
+   * 실패한 일정 조회를 다시 요청한다.
    */
   function handleRetry() {
     void refetch();

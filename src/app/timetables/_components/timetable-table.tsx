@@ -6,7 +6,7 @@ export interface TimetableTableProps {
 }
 
 /**
- * 일정 시간을 한국 표준시의 24시간 시각으로 표시합니다.
+ * 일정 시간을 한국 표준시의 24시간 시각으로 변환한다.
  * @param value HH:mm / HH:mm:ss 또는 ISO 일시
  * @returns HH:mm 형식의 시각
  */
@@ -24,7 +24,7 @@ export function formatTimetableTime(value: string): string {
 }
 
 /**
- * 일정의 시작과 종료 시간을 연결합니다.
+ * 일정의 시작과 종료 시간을 연결한다.
  * @param startTime 시작 시간
  * @param endTime 종료 시간
  * @returns 표시할 시간 범위
@@ -34,7 +34,7 @@ export function formatTimetableTimeRange(startTime: string, endTime: string): st
 }
 
 /**
- * 일정 한 행을 표시합니다.
+ * 일정 한 행을 렌더링한다.
  * @param item 표시할 일정
  * @returns 일정 테이블 행
  */
