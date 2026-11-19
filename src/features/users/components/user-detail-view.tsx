@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
+import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Sidebar } from '@/components/ui/sidebar';
 import type { AdminRole, User } from '@/features/users/types/user';
 
 interface UserDetailViewProps {
@@ -42,7 +42,7 @@ export function UserDetailView({ user, role }: UserDetailViewProps) {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
-      <Sidebar
+      <AuthenticatedSidebar
         variant={role}
         activeMenuId="users"
         className="sticky top-0 h-screen min-h-0 self-start"

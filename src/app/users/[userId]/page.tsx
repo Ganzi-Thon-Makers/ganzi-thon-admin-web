@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 
 import { UserDetailView } from '@/features/users/components/user-detail-view';
-import { getAdminRole } from '@/features/users/data/admin-role';
 import { getMockUserById } from '@/features/users/data/mock-users';
+import { getServerAuthSession } from '@/lib/auth/cookies';
 
 export const instant = false;
 
@@ -23,5 +23,8 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
     notFound();
   }
 
-  return <UserDetailView user={user} role={getAdminRole()} />;
+  const { role } = await getServerAuthSession();
+  const pageRole = role === 'SUPER_ADMIN' ? 'superadmin' : 'admin';
+
+  return <UserDetailView user={user} role={pageRole} />;
 }

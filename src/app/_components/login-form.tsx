@@ -6,23 +6,15 @@ import {
   type SubmitEvent,
   useActionState,
   useState,
-  useTransition,
 } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
-import { loginAction, logoutAction, refreshSessionAction } from '@/lib/auth/actions';
-import type { BackofficeRole, LoginFormState } from '@/lib/auth/types';
+import { loginAction } from '@/lib/auth/actions';
+import type { LoginFormState } from '@/lib/auth/types';
 
 interface LoginFormProps {
   errorMessage?: string;
-  initialRole: BackofficeRole | null;
-}
-
-interface SessionFeedbackState {
-  message: string;
-  isError: boolean;
 }
 
 const INITIAL_LOGIN_FORM_STATE: LoginFormState = {
@@ -32,35 +24,24 @@ const INITIAL_LOGIN_FORM_STATE: LoginFormState = {
 /**
  * 백오피스 관리자 로그인 입력을 처리하는 LoginForm 컴포넌트입니다.
  *
- * 로그인 / 세션 갱신 / 로그아웃 Server Action과 연동해 폼 입력과 인증 완료 화면을 전환합니다.
+ * 로그인 Server Action과 연동해 관리자 로그인 입력과 오류 메시지를 표시합니다.
  */
-export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
+export function LoginForm({ errorMessage }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [dismissedActionError, setDismissedActionError] = useState(false);
-  const [loggedOut, setLoggedOut] = useState(false);
-  const [refreshedRole, setRefreshedRole] = useState<BackofficeRole | null>(null);
-  const [sessionFeedback, setSessionFeedback] = useState<SessionFeedbackState | null>(null);
 
   const [actionState, formAction, isLoginPending] = useActionState(
     loginAction,
     INITIAL_LOGIN_FORM_STATE,
   );
-  const [isSessionPending, startSessionTransition] = useTransition();
 
-  const isPending = isLoginPending || isSessionPending;
+  const isPending = isLoginPending;
   const canLogin = username.trim().length > 0 && password.trim().length > 0;
-  const serverRole = actionState.status === 'idle' ? initialRole : null;
-  const isAuthenticated =
-    !loggedOut &&
-    ((actionState.status === 'success' && Boolean(actionState.role)) || Boolean(serverRole));
-  const activeRole = refreshedRole ?? actionState.role ?? serverRole;
 
   const actionErrorMessage =
     !dismissedActionError && actionState.status === 'error' ? actionState.errorMessage : undefined;
-  const sessionFormErrorMessage =
-    !isAuthenticated && sessionFeedback?.isError ? sessionFeedback.message : undefined;
-  const resolvedErrorMessage = actionErrorMessage ?? sessionFormErrorMessage ?? errorMessage;
+  const resolvedErrorMessage = actionErrorMessage ?? errorMessage;
 
   /**
    * 아이디 입력값을 갱신하고 이전 서버 오류 표시를 해제한다.
@@ -69,9 +50,6 @@ export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
     setDismissedActionError(true);
-    if (!isAuthenticated && sessionFeedback?.isError) {
-      setSessionFeedback(null);
-    }
   };
 
   /**
@@ -81,9 +59,6 @@ export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
   const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
     setDismissedActionError(true);
-    if (!isAuthenticated && sessionFeedback?.isError) {
-      setSessionFeedback(null);
-    }
   };
 
   /**
@@ -98,9 +73,6 @@ export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
 
     const formData = new FormData(event.currentTarget);
     setDismissedActionError(false);
-    setLoggedOut(false);
-    setRefreshedRole(null);
-    setSessionFeedback(null);
 
     /**
      * 수집된 로그인 폼 데이터를 서버 액션으로 전달한다.
@@ -111,144 +83,6 @@ export function LoginForm({ errorMessage, initialRole }: LoginFormProps) {
 
     startTransition(submitLogin);
   };
-
-  /**
-   * 서버 쿠키의 refreshToken을 사용해 백오피스 인증 토큰 재발급을 요청한다.
-   */
-  const handleRefreshSession = () => {
-    if (isPending) {
-      return;
-    }
-
-    /**
-     * 토큰 재발급 액션을 호출하고 결과에 따라 인증 또는 재로그인 상태를 반영한다.
-     */
-    const runRefresh = async () => {
-      const result = await refreshSessionAction();
-
-      if (result.ok) {
-        if (result.role) {
-          setRefreshedRole(result.role);
-        }
-        setSessionFeedback({
-          message: '인증 토큰이 갱신되었습니다.',
-          isError: false,
-        });
-        return;
-      }
-
-      if (result.errorCode === 'INVALID_REFRESH_TOKEN' || result.errorCode === 'UNAUTHORIZED') {
-        setLoggedOut(true);
-        setRefreshedRole(null);
-        setPassword('');
-        setSessionFeedback({
-          message: result.errorMessage ?? '유효하지 않은 토큰입니다. 다시 로그인해주세요.',
-          isError: true,
-        });
-        return;
-      }
-
-      setSessionFeedback({
-        message: result.errorMessage ?? '토큰 재발급에 실패했습니다.',
-        isError: true,
-      });
-    };
-
-    startSessionTransition(runRefresh);
-  };
-
-  /**
-   * 백오피스 로그아웃 액션을 실행하고 로컬 인증 UI 상태를 초기화한다.
-   */
-  const handleLogout = () => {
-    if (isPending) {
-      return;
-    }
-
-    /**
-     * 로그아웃 액션을 호출하고 폼 입력 상태로 되돌린다.
-     */
-    const runLogout = async () => {
-      const result = await logoutAction();
-      setLoggedOut(true);
-      setRefreshedRole(null);
-      setPassword('');
-      setDismissedActionError(true);
-
-      if (!result.ok && result.errorMessage) {
-        setSessionFeedback({
-          message: `${result.errorMessage} 브라우저 인증 쿠키는 삭제되었습니다.`,
-          isError: true,
-        });
-        return;
-      }
-
-      setSessionFeedback(null);
-    };
-
-    startSessionTransition(runLogout);
-  };
-
-  if (isAuthenticated && activeRole) {
-    return (
-      <section
-        aria-label="관리자 인증 완료"
-        role="status"
-        className="flex w-full flex-col gap-6 rounded-[8px] border border-gray-700 bg-gray-800 p-6"
-      >
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-title-sb-20 text-white">관리자 로그인 완료</h1>
-            <Badge color="red" size="medium">
-              {activeRole}
-            </Badge>
-          </div>
-          <p className="text-body-r-14 text-gray-200">
-            <span className="font-semibold text-white">
-              {actionState.loginId || username || '관리자'}
-            </span>{' '}
-            계정의 인증 토큰이 서버 보안 쿠키에 저장되었습니다.
-          </p>
-        </div>
-
-        {sessionFeedback ? (
-          <p
-            role={sessionFeedback.isError ? 'alert' : 'status'}
-            className={
-              sessionFeedback.isError
-                ? 'text-body-r-14 text-red-400'
-                : 'text-body-r-14 text-gray-200'
-            }
-          >
-            {sessionFeedback.message}
-          </p>
-        ) : null}
-
-        <div className="flex w-full flex-col gap-3 sm:flex-row">
-          <Button
-            disabled={isPending}
-            fullWidth
-            onClick={handleRefreshSession}
-            size="large"
-            type="button"
-            variant="secondary"
-          >
-            {isSessionPending ? '처리 중...' : '세션 갱신'}
-          </Button>
-          <Button
-            disabled={isPending}
-            fullWidth
-            onClick={handleLogout}
-            size="large"
-            type="button"
-            variant="outline"
-          >
-            로그아웃
-          </Button>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <form
