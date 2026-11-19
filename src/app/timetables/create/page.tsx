@@ -6,7 +6,7 @@ import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar'
 import { Icon } from '@/components/ui/icon';
 import { getServerAuthSession } from '@/lib/auth/cookies';
 
-import { TimetableCreateForm } from '../_components/timetable-create-form';
+import { TimetableForm } from '../_components/timetable-form';
 import { getTimetableList } from '../_data/timetable-api';
 
 export const instant = false;
@@ -19,7 +19,7 @@ export const instant = false;
 async function TimetableCreateData() {
   const result = await getTimetableList();
   await io();
-  return <TimetableCreateForm initialTimetables={result.ok ? result.data : undefined} />;
+  return <TimetableForm initialTimetables={result.ok ? result.data : undefined} />;
 }
 
 /**
@@ -45,7 +45,7 @@ export default async function TimetableCreatePage() {
         </header>
         <main className="flex-1 px-6 pt-12 pb-10 md:px-10 xl:px-16">
           <h1 className="mb-7 text-display-sb-36 text-gray-50">일정 등록</h1>
-          <Suspense fallback={<TimetableCreateForm />}>
+          <Suspense fallback={<TimetableForm />}>
             <TimetableCreateData />
           </Suspense>
         </main>

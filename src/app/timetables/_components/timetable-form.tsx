@@ -16,12 +16,15 @@ import {
 import { TextField } from '@/components/ui/text-field';
 
 import type { TimetableItem } from '../_data/timetable-api';
+import { TIMETABLE_EVENT_DATE, timetableTimestamp } from '../_data/timetable-time';
 import { queryTimetables } from './timetable-list-client';
 import { formatTimetableTime } from './timetable-table';
 
-export interface TimetableCreateFormProps {
+export interface TimetableFormProps {
   /** 중복 시간 검사를 위한 초기 일정 목록 */
   initialTimetables?: TimetableItem[];
+  /** 수정 대상 일정 (미전달 시 신규 등록) */
+  timetable?: TimetableItem;
 }
 
 /** 시간 선택 드롭다운 컴포넌트의 Props */
@@ -125,31 +128,44 @@ function TimetableTimeDropdown({
 }
 
 /**
- * 시각을 자정부터 지난 분으로 변환한다.
- * @param time HH:mm 또는 API 일시
- * @returns 분 단위 시각
+ * 선택된 시각을 바탕으로 등록 / 수정에 전달할 일시 값을 계산한다.
+ *
+ * 기존 일정과 시각이 같으면 원본 값을 유지하고, 변경되었거나 신규 일정이면 행사 날짜와 조합한 일시 문자열을 생성한다.
+ * @param time 선택한 HH:mm 시각
+ * @param original 기존 일정의 일시 또는 시각 문자열
+ * @returns 등록 / 수정에 사용할 일시 또는 원본 시각 문자열
  */
-function toMinutes(time: string): number {
-  const [hours, minutes] = formatTimetableTime(time).split(':').map(Number);
-  return hours * 60 + minutes;
+function selectedDateTime(time: string, original?: string): string {
+  if (!original) return `${TIMETABLE_EVENT_DATE}T${time}:00`;
+  if (formatTimetableTime(original) === time) return original;
+  const koreanDate = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(timetableTimestamp(original));
+  return `${koreanDate}T${time}:00`;
 }
 
 /**
- * 한국 시각 기준으로 등록된 일정과 겹치는지 검사한다.
- * @param startTime 등록 시작 시각
- * @param endTime 등록 종료 시각
- * @param timetables 등록된 일정 목록
+ * 한국 시각 기준으로 기존 일정과 시간이 겹치는지 검사한다.
+ * @param startTime 검사할 시작 시각
+ * @param endTime 검사할 종료 시각
+ * @param timetables 등록된 전체 일정 목록
+ * @param editingId 현재 수정 중인 일정 식별자 (검사에서 제외)
  * @returns 겹치는 일정 존재 여부
  */
 function overlapsTimetables(
   startTime: string,
   endTime: string,
   timetables: TimetableItem[],
+  editingId?: number,
 ): boolean {
   for (const item of timetables) {
+    if (item.id === editingId) continue;
     if (
-      toMinutes(startTime) < toMinutes(item.endTime) &&
-      toMinutes(endTime) > toMinutes(item.startTime)
+      timetableTimestamp(startTime) < timetableTimestamp(item.endTime) &&
+      timetableTimestamp(endTime) > timetableTimestamp(item.startTime)
     )
       return true;
   }
@@ -157,12 +173,12 @@ function overlapsTimetables(
 }
 
 /**
- * 타임테이블 일정을 새로 등록하는 입력 폼 컴포넌트입니다.
+ * 타임테이블 일정을 등록하거나 수정하는 입력 폼 컴포넌트입니다.
  *
- * 행사일(2026-11-21) 기준의 시작/종료 시각, 제목, 상세 내용을 검증하고 서버에 등록합니다.
- * @param props 중복 검사에 사용할 초기 일정 목록
+ * 시작 / 종료 시각, 제목, 상세 내용을 검증하고 서버에 저장합니다.
+ * @param props 초기 일정 목록 / 수정 대상 일정
  */
-export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormProps) {
+export function TimetableForm({ initialTimetables, timetable }: TimetableFormProps) {
   if (initialTimetables !== undefined) use(io());
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -173,10 +189,12 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
     staleTime: 30_000,
     retry: false,
   });
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [startTime, setStartTime] = useState(
+    timetable ? formatTimetableTime(timetable.startTime) : '',
+  );
+  const [endTime, setEndTime] = useState(timetable ? formatTimetableTime(timetable.endTime) : '');
+  const [title, setTitle] = useState(timetable?.title ?? '');
+  const [description, setDescription] = useState(timetable?.description ?? '');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
@@ -216,9 +234,9 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
     router.push('/timetables');
   }
   /**
-   * 입력과 시간 중복을 검증하고 행사 날짜의 한국 시각으로 등록한다.
+   * 입력과 시간 중복을 검증하고 일정을 등록 또는 수정한다.
    * @param event 폼 제출 이벤트
-   * @returns 등록 요청 완료
+   * @returns 저장 요청 완료
    */
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -236,34 +254,39 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
       setErrorMessage('일정 제목은 100자 이하로 입력해주세요.');
       return;
     }
-    if (!description.trim()) {
+    if (!timetable && !description.trim()) {
       setErrorMessage('상세 내용을 입력해주세요.');
       return;
     }
-    if (startTime >= endTime) {
+    const start = selectedDateTime(startTime, timetable?.startTime);
+    const end = selectedDateTime(endTime, timetable?.endTime);
+    if (timetableTimestamp(start) >= timetableTimestamp(end)) {
       setErrorMessage('종료 시간은 시작 시간보다 늦어야 합니다.');
       return;
     }
-    if (timetables !== undefined && overlapsTimetables(startTime, endTime, timetables)) {
+    if (timetables !== undefined && overlapsTimetables(start, end, timetables, timetable?.id)) {
       setErrorMessage('기존 일정과 시간이 겹칩니다.');
       return;
     }
     submittingRef.current = true;
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/timetables', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startTime: `2026-11-21T${startTime}:00`,
-          endTime: `2026-11-21T${endTime}:00`,
-          title: title.trim(),
-          description: description.trim(),
-          isVote: false,
-        }),
-      });
+      const response = await fetch(
+        timetable ? `/api/timetables/${timetable.id}` : '/api/timetables',
+        {
+          method: timetable ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            startTime: start,
+            endTime: end,
+            title: title.trim(),
+            description: description.trim() || null,
+            ...(timetable ? {} : { isVote: false }),
+          }),
+        },
+      );
       if (!response.ok) {
-        let message = '일정을 등록하지 못했습니다. 잠시 후 다시 시도해주세요.';
+        let message = '일정을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.';
         try {
           const payload: unknown = await response.json();
           if (
@@ -330,8 +353,8 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
         </div>
         <div className="mt-6">
           <TextField
-            label="상세 내용 *"
-            required
+            label={timetable ? '상세 내용' : '상세 내용 *'}
+            required={!timetable}
             placeholder="마음에 드는 프로젝트에 투표해주세요."
             value={description}
             onChange={handleDescriptionChange}
@@ -364,7 +387,13 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
           disabled={isSubmitting}
           className="h-12 w-34 rounded-[4px]"
         >
-          {isSubmitting ? '등록 중...' : '일정 등록'}
+          {timetable
+            ? isSubmitting
+              ? '저장 중...'
+              : '저장'
+            : isSubmitting
+              ? '등록 중...'
+              : '일정 등록'}
         </Button>
       </div>
     </form>
