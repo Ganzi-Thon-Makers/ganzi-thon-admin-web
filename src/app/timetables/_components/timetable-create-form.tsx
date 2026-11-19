@@ -257,6 +257,7 @@ export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormPr
           endTime: `2026-11-21T${endTime}:00`,
           title: title.trim(),
           description: description.trim(),
+          isVote: false,
         }),
       });
       if (!response.ok) {
