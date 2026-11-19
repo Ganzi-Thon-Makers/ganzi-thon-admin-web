@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
 
+import { getUserDetail } from '@/features/users/api/get-user-detail';
 import { UserDetailView } from '@/features/users/components/user-detail-view';
-import { getMockUserById } from '@/features/users/data/mock-users';
-import { getServerAuthSession } from '@/lib/auth/cookies';
+import { getServerAuthTokens } from '@/lib/auth/cookies';
 
 export const instant = false;
 
@@ -17,14 +18,44 @@ interface UserDetailPageProps {
  */
 export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { userId } = await params;
-  const user = getMockUserById(userId);
+  if (!/^[1-9]\d*$/.test(userId) || !Number.isSafeInteger(Number(userId))) notFound();
 
-  if (!user) {
-    notFound();
+  const { accessToken, role } = await getServerAuthTokens();
+  if (!accessToken || !role) redirect('/');
+
+  const result = await getUserDetail(userId, accessToken);
+  if (!result.ok) {
+    if (result.status === 404) notFound();
+
+    const authenticationError = result.status === 401;
+    const forbidden = result.status === 403;
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-gray-900 px-6 text-center text-gray-50">
+        <h1 className="text-display-sb-32">
+          {authenticationError
+            ? '로그인이 만료되었습니다'
+            : forbidden
+              ? '사용자 정보를 조회할 권한이 없습니다'
+              : '사용자 정보를 불러오지 못했습니다'}
+        </h1>
+        <p className="text-body-r-16 text-gray-300">
+          {authenticationError
+            ? '다시 로그인해 주세요.'
+            : forbidden
+              ? '계정 권한을 확인해 주세요.'
+              : '잠시 후 다시 시도해 주세요.'}
+        </p>
+        <Link
+          href={authenticationError ? '/' : '/users'}
+          className="text-body-sb-16 text-red-400 underline"
+        >
+          {authenticationError ? '로그인으로 이동' : '사용자 목록으로 이동'}
+        </Link>
+      </main>
+    );
   }
 
-  const { role } = await getServerAuthSession();
-  const pageRole = role === 'SUPER_ADMIN' ? 'superadmin' : 'admin';
-
-  return <UserDetailView user={user} role={pageRole} />;
+  return (
+    <UserDetailView user={result.user} role={role === 'SUPER_ADMIN' ? 'superadmin' : 'admin'} />
+  );
 }
