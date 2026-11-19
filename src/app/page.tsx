@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { LoginForm } from '@/app/_components/login-form';
@@ -9,7 +10,11 @@ import { getServerAuthSession } from '@/lib/auth/cookies';
 async function SessionLoginForm() {
   const { role } = await getServerAuthSession();
 
-  return <LoginForm initialRole={role} />;
+  if (role) {
+    redirect('/users');
+  }
+
+  return <LoginForm />;
 }
 
 export default function Home() {
