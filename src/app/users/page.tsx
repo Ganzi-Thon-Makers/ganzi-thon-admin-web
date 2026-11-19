@@ -1,24 +1,20 @@
-'use client';
-
 import { Icon } from '@/components/ui/icon';
 import { Sidebar } from '@/components/ui/sidebar';
+import { getServerAuthSession } from '@/lib/auth/cookies';
 
-import { UserListClient } from './_components/user-list-client';
-import { mockUsers } from './_data/users';
+import { UserListSection } from './_components/user-list-section';
 
-/** 사용자 상세 보기 선택을 현재 콘솔에서 확인할 수 있도록 기록합니다.
- * @param userId 선택된 사용자의 식별자
- */
-function handleViewUserDetails(userId: string) {
-  console.log('사용자 상세 보기 선택:', userId);
-}
+export const instant = false;
 
 /** ADMIN-02-1 전체 사용자 조회 기본 화면입니다. */
-export default function UsersPage() {
+export default async function UsersPage() {
+  const { role } = await getServerAuthSession();
+  const sidebarVariant = role === 'SUPER_ADMIN' ? 'superadmin' : 'admin';
+
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
       <Sidebar
-        variant="admin"
+        variant={sidebarVariant}
         activeMenuId="users"
         className="sticky top-0 h-screen min-h-0 self-start"
       />
@@ -32,7 +28,7 @@ export default function UsersPage() {
         <main className="flex-1 px-10 pt-12 pb-10 xl:px-16">
           <h1 className="mb-6 text-display-sb-36 text-gray-50">전체 사용자</h1>
 
-          <UserListClient users={mockUsers} onViewDetails={handleViewUserDetails} />
+          <UserListSection />
         </main>
       </div>
     </div>
