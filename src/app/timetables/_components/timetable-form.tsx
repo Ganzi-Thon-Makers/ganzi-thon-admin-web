@@ -130,14 +130,13 @@ function TimetableTimeDropdown({
 /**
  * 선택된 시각을 바탕으로 등록 / 수정에 전달할 일시 값을 계산한다.
  *
- * 기존 일정과 시각이 같으면 원본 값을 유지하고, 변경되었거나 신규 일정이면 행사 날짜와 조합한 일시 문자열을 생성한다.
+ * 신규 일정이면 행사 날짜를, 기존 일정이면 해당 일정의 한국 현지 날짜를 선택한 시각과 조합해 항상 타임존 표기가 없는 KST 일시 문자열을 생성한다.
  * @param time 선택한 HH:mm 시각
  * @param original 기존 일정의 일시 또는 시각 문자열
- * @returns 등록 / 수정에 사용할 일시 또는 원본 시각 문자열
+ * @returns 타임존 표기가 없는 등록 / 수정 일시 문자열
  */
 function selectedDateTime(time: string, original?: string): string {
   if (!original) return `${TIMETABLE_EVENT_DATE}T${time}:00`;
-  if (formatTimetableTime(original) === time) return original;
   const koreanDate = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',

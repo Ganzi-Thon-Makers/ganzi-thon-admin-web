@@ -370,19 +370,12 @@ export interface UpdateTimetableRequest {
 }
 
 /**
- * 입력 시각 또는 일시를 행사일의 한국 현지 일시 문자열로 정규화한다.
+ * 등록과 동일한 날짜 정책을 적용해 입력 시각 또는 일시를 행사일의 한국 현지 일시로 정규화한다.
  * @param value 시각 또는 ISO 일시
- * @returns 정규화된 일시 또는 형식 불일치 시 null
+ * @returns 정규화된 행사 일시 또는 날짜 / 형식 불일치 시 null
  */
 function normalizeUpdateTimetableDateTime(value: string): string | null {
-  if (/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)) {
-    return `${TIMETABLE_EVENT_DATE}T${value.length === 5 ? `${value}:00` : value}`;
-  }
-  return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(
-    value,
-  ) && isIsoDateTimeString(value)
-    ? value
-    : null;
+  return normalizeTimetableDateTime(value);
 }
 
 /**
