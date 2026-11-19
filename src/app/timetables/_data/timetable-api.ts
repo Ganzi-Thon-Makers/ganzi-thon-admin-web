@@ -1,8 +1,12 @@
 import 'server-only';
 
 import { requestServerApi } from '@/lib/api/server-client';
-import type { ApiResult, ApiSuccessResponse } from '@/lib/api/types';
+import type { ApiErrorCode, ApiResult, ApiSuccessResponse } from '@/lib/api/types';
 import { getServerAuthTokens } from '@/lib/auth/cookies';
+
+import { TIMETABLE_EVENT_DATE, timetableTimestamp } from './timetable-time';
+
+export { TIMETABLE_EVENT_DATE } from './timetable-time';
 
 export interface TimetableItem {
   /** 일정 식별자 */
@@ -55,19 +59,21 @@ export function compareTimetables(left: TimetableItem, right: TimetableItem): nu
   );
 }
 
+type TimetableResponse = Omit<TimetableItem, 'description'> & { description: string | null };
+
 /**
  * 목록 항목이 표시 가능한 일정인지 확인한다.
  * @param item 검증할 응답 항목
  * @returns 일정 형식 일치 여부
  */
-function isTimetableItem(item: unknown): item is TimetableItem {
+function isTimetableItem(item: unknown): item is TimetableResponse {
   if (item === null || typeof item !== 'object') return false;
   const value = item as Record<string, unknown>;
   return (
     typeof value.id === 'number' &&
     Number.isSafeInteger(value.id) &&
     typeof value.title === 'string' &&
-    typeof value.description === 'string' &&
+    (typeof value.description === 'string' || value.description === null) &&
     isValidTimeString(value.startTime) &&
     isValidTimeString(value.endTime)
   );
@@ -79,7 +85,7 @@ function isTimetableItem(item: unknown): item is TimetableItem {
  * @returns 일정 목록 또는 응답 형식 오류
  */
 export function validateTimetableListResponse(
-  payload: ApiSuccessResponse<TimetableItem[]> | null,
+  payload: ApiSuccessResponse<TimetableResponse[]> | null,
 ): ApiResult<TimetableItem[]> {
   if (!Array.isArray(payload?.data) || !payload.data.every(isTimetableItem)) {
     return {
@@ -89,7 +95,11 @@ export function validateTimetableListResponse(
       message: '타임테이블 목록 응답 형식이 올바르지 않습니다.',
     };
   }
-  return { ok: true, data: payload.data.toSorted(compareTimetables) };
+  const items: TimetableItem[] = [];
+  for (const item of payload.data) {
+    items.push({ ...item, description: item.description ?? '' });
+  }
+  return { ok: true, data: items.toSorted(compareTimetables) };
 }
 
 /**
@@ -196,9 +206,6 @@ export async function deleteTimetable(timetableId: unknown): Promise<ApiResult<n
   return requestDeleteTimetable(accessToken, validated.data);
 }
 
-/** 타임테이블 행사 기준 일자 */
-export const TIMETABLE_EVENT_DATE = '2026-11-21';
-
 /** 타임테이블 일정 등록 요청 본문 */
 export interface CreateTimetableRequest {
   /** 시작 일시 (HH:mm / ISO 일시) */
@@ -299,7 +306,7 @@ export function validateCreateTimetableInput(payload: unknown): ApiResult<Create
 }
 
 /**
- * 등록 입력 오류를 생성한다.
+ * 일정 등록 또는 수정 입력 오류를 생성한다.
  * @param message 오류 안내
  * @returns 입력 오류 결과
  */
@@ -348,4 +355,143 @@ export async function createTimetable(payload: unknown): Promise<ApiResult<null>
   const validated = validateCreateTimetableInput(payload);
   if (!validated.ok) return validated;
   return requestCreateTimetable(accessToken, validated.data);
+}
+
+/** 타임테이블 일정 수정 요청 본문 */
+export interface UpdateTimetableRequest {
+  /** 일정 제목 */
+  title: string;
+  /** 일정 상세 내용 (미입력 시 null) */
+  description: string | null;
+  /** 시작 일시 (HH:mm / ISO 일시) */
+  startTime: string;
+  /** 종료 일시 (HH:mm / ISO 일시) */
+  endTime: string;
+}
+
+/**
+ * 입력 시각 또는 일시를 행사일의 한국 현지 일시 문자열로 정규화한다.
+ * @param value 시각 또는 ISO 일시
+ * @returns 정규화된 일시 또는 형식 불일치 시 null
+ */
+function normalizeUpdateTimetableDateTime(value: string): string | null {
+  if (/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)) {
+    return `${TIMETABLE_EVENT_DATE}T${value.length === 5 ? `${value}:00` : value}`;
+  }
+  return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(
+    value,
+  ) && isIsoDateTimeString(value)
+    ? value
+    : null;
+}
+
+/**
+ * 수정 요청 본문을 검증하고 문자열과 일시를 정규화한다.
+ * @param payload 수정 요청 본문
+ * @returns 정규화된 입력 또는 검증 오류
+ */
+export function validateUpdateTimetableInput(payload: unknown): ApiResult<UpdateTimetableRequest> {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload))
+    return invalidCreateInput('요청 본문 형식이 올바르지 않습니다.');
+  const value = payload as Record<string, unknown>;
+  if (typeof value.title !== 'string' || !value.title.trim())
+    return invalidCreateInput('일정 제목을 입력해주세요.');
+  if (value.title.trim().length > 100)
+    return invalidCreateInput('일정 제목은 100자 이하로 입력해주세요.');
+  if (
+    value.description !== undefined &&
+    value.description !== null &&
+    typeof value.description !== 'string'
+  )
+    return invalidCreateInput('상세 내용 형식이 올바르지 않습니다.');
+  if (!isValidTimeString(value.startTime) || !isValidTimeString(value.endTime))
+    return invalidCreateInput('시작 시간과 종료 시간을 선택해주세요.');
+  const startTime = normalizeUpdateTimetableDateTime(value.startTime);
+  const endTime = normalizeUpdateTimetableDateTime(value.endTime);
+  if (!startTime || !endTime)
+    return invalidCreateInput('시작 시간과 종료 시간 형식이 올바르지 않습니다.');
+  if (timetableTimestamp(endTime) <= timetableTimestamp(startTime))
+    return invalidCreateInput('종료 시간은 시작 시간보다 늦어야 합니다.');
+  return {
+    ok: true,
+    data: {
+      title: value.title.trim(),
+      description: typeof value.description === 'string' ? value.description.trim() : null,
+      startTime,
+      endTime,
+    },
+  };
+}
+
+/**
+ * 서버의 일정 수정 응답 본문을 검증하고 빈 설명을 기본값으로 보정한다.
+ * @param payload 서버 성공 응답
+ * @returns 수정된 일정 또는 응답 형식 오류
+ */
+export function validateUpdateTimetableResponse(
+  payload: ApiSuccessResponse<TimetableResponse> | null,
+): ApiResult<TimetableItem> {
+  if (!isTimetableItem(payload?.data))
+    return {
+      ok: false,
+      status: 502,
+      code: 'UNKNOWN_ERROR',
+      message: '타임테이블 수정 응답 형식이 올바르지 않습니다.',
+    };
+  return { ok: true, data: { ...payload.data, description: payload.data.description ?? '' } };
+}
+
+/**
+ * 인증 토큰으로 일정 수정을 요청한다.
+ * @param accessToken 서버에서 읽은 액세스 토큰
+ * @param timetableId 수정할 일정 식별자
+ * @param body 검증된 수정 입력
+ * @returns 수정된 일정 또는 API 오류
+ */
+export function requestUpdateTimetable(
+  accessToken: string,
+  timetableId: number,
+  body: UpdateTimetableRequest,
+): Promise<ApiResult<TimetableItem>> {
+  return requestServerApi<TimetableItem, ApiErrorCode, TimetableResponse>(
+    `/backoffice/api/v1/timetables/${encodeURIComponent(String(timetableId))}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body,
+    },
+    validateUpdateTimetableResponse,
+  );
+}
+
+/**
+ * 슈퍼 관리자 권한과 식별자 / 입력을 확인하고 일정을 수정한다.
+ * @param timetableId 수정할 일정 식별자
+ * @param payload 수정 요청 본문
+ * @returns 수정된 일정 또는 인증 / 권한 / 입력 오류
+ */
+export async function updateTimetable(
+  timetableId: unknown,
+  payload: unknown,
+): Promise<ApiResult<TimetableItem>> {
+  const { accessToken, role } = await getServerAuthTokens();
+  if (!accessToken)
+    return {
+      ok: false,
+      status: 401,
+      code: 'UNAUTHORIZED',
+      message: '로그인이 필요합니다. 다시 로그인해주세요.',
+    };
+  if (role !== 'SUPER_ADMIN')
+    return {
+      ok: false,
+      status: 403,
+      code: 'FORBIDDEN',
+      message: '타임테이블 관리 권한이 없습니다.',
+    };
+  const validatedId = validateTimetableId(timetableId);
+  if (!validatedId.ok) return validatedId;
+  const validated = validateUpdateTimetableInput(payload);
+  if (!validated.ok) return validated;
+  return requestUpdateTimetable(accessToken, validatedId.data, validated.data);
 }
