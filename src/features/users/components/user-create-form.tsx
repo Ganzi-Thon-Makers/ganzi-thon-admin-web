@@ -6,6 +6,7 @@ import { type ChangeEvent, useId, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import {
   Accordion,
   AccordionContent,
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Sidebar } from '@/components/ui/sidebar';
+import type { SidebarVariant } from '@/components/ui/sidebar-client';
 import { TextField } from '@/components/ui/text-field';
 
 type RegistrationRole = 'PARTICIPANT' | 'TEAM' | 'ADMIN';
@@ -192,7 +193,12 @@ function validateRegistration(values: RegistrationValues, context: z.RefinementC
 
 const registrationSchema = registrationBaseSchema.superRefine(validateRegistration);
 
-export function UserCreateForm() {
+interface UserCreateFormProps {
+  /** 인증 세션 역할에 맞춘 사이드바 변형 */
+  sidebarVariant?: SidebarVariant;
+}
+
+export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps) {
   const {
     register,
     control,
@@ -258,8 +264,8 @@ export function UserCreateForm() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
-      <Sidebar
-        variant="admin"
+      <AuthenticatedSidebar
+        variant={sidebarVariant}
         activeMenuId="users"
         className="sticky top-0 h-screen min-h-0 self-start"
       />
