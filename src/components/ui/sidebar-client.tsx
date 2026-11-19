@@ -113,6 +113,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     id: 'projects',
     label: '프로젝트 관리',
     icon: 'card',
+    href: '/projects',
   },
   {
     id: 'booths',
@@ -134,6 +135,7 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
     id: 'projects',
     label: '프로젝트 관리',
     icon: 'card',
+    href: '/projects',
   },
   {
     id: 'votes',
