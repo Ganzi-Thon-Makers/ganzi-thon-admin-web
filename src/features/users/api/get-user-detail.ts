@@ -17,7 +17,11 @@ interface UserDetailResponse {
 
 type UserDetailResult = { ok: true; user: User } | { ok: false; status: number };
 
-/** 참여자 상세 정보를 조회하고 기존 상세 화면의 데이터 형식으로 변환합니다. */
+/** 참여자 상세 정보를 조회하고 기존 상세 화면의 데이터 형식으로 변환합니다.
+ * @param userId 조회할 사용자 ID
+ * @param accessToken 관리자 인증 토큰
+ * @returns 변환된 참여자 정보 또는 조회 실패 상태
+ */
 export async function getUserDetail(
   userId: string,
   accessToken: string,

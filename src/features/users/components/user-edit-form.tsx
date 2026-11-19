@@ -16,10 +16,16 @@ import type { User } from '../types/user';
 import { editSchema, type EditValues } from '../validation/user-edit';
 import { type DropdownOption, FormDropdown } from './user-create-form';
 
-const teamOptions: DropdownOption[] = Array.from({ length: 8 }, (_, index) => ({
-  value: String(index + 1).padStart(2, '0'),
-  label: `${index + 1}팀`,
-}));
+/** 번호를 수정 폼의 팀 선택 항목으로 변환합니다.
+ * @param _value Array.from이 전달하는 사용하지 않는 값
+ * @param index 0부터 시작하는 팀 순서
+ * @returns 팀 번호와 화면에 표시할 이름
+ */
+function createTeamOption(_value: unknown, index: number): DropdownOption {
+  return { value: String(index + 1).padStart(2, '0'), label: `${index + 1}팀` };
+}
+
+const teamOptions: DropdownOption[] = Array.from({ length: 8 }, createTeamOption);
 
 const partOptions: DropdownOption[] = [
   { value: 'PLAN', label: '기획' },
@@ -51,27 +57,59 @@ export function UserEditForm({ user }: UserEditFormProps) {
     defaultValues: initialValues,
   });
   const values = useWatch({ control });
-  const hasChanged = (Object.keys(initialValues) as (keyof EditValues)[]).some(
-    (key) => values[key] !== initialValues[key],
-  );
+
+  /** 현재 필드 값이 상세 조회에서 받은 초기값과 다른지 확인합니다.
+   * @param key 비교할 입력 필드
+   * @returns 입력값이 변경되었으면 true
+   */
+  function isChangedField(key: keyof EditValues) {
+    return values[key] !== initialValues[key];
+  }
+
+  /** 선택 항목이 사용자의 기존 팀 번호와 일치하는지 확인합니다.
+   * @param option 비교할 팀 선택 항목
+   * @returns 기존 팀 번호와 일치하면 true
+   */
+  function isCurrentTeamOption(option: DropdownOption) {
+    return option.value === user.teamNumber;
+  }
+
+  /** 선택 항목이 사용자의 기존 파트와 일치하는지 확인합니다.
+   * @param option 비교할 파트 선택 항목
+   * @returns 기존 파트와 일치하면 true
+   */
+  function isCurrentPartOption(option: DropdownOption) {
+    return option.value === user.part;
+  }
+
+  const hasChanged = (Object.keys(initialValues) as (keyof EditValues)[]).some(isChangedField);
   const canSave = hasChanged && formState.isValid && !isSaving;
   const selectedTeam = values.teamNumber ?? '';
   const selectedPart = values.part ?? '';
-  const availableTeamOptions = teamOptions.some((option) => option.value === user.teamNumber)
+  const availableTeamOptions = teamOptions.some(isCurrentTeamOption)
     ? teamOptions
     : [{ value: user.teamNumber, label: `${user.teamNumber}팀` }, ...teamOptions];
-  const availablePartOptions = partOptions.some((option) => option.value === user.part)
+  const availablePartOptions = partOptions.some(isCurrentPartOption)
     ? partOptions
     : [{ value: user.part, label: user.part }, ...partOptions];
 
+  /** 선택한 팀 번호를 폼에 반영하고 검증 상태를 갱신합니다.
+   * @param value 새로 선택한 팀 번호
+   */
   function handleTeamChange(value: string) {
     setValue('teamNumber', value, { shouldValidate: true, shouldDirty: true });
   }
 
+  /** 선택한 파트를 폼에 반영하고 검증 상태를 갱신합니다.
+   * @param value 새로 선택한 파트
+   */
   function handlePartChange(value: string) {
     setValue('part', value, { shouldValidate: true, shouldDirty: true });
   }
 
+  /** 검증된 변경 사항을 저장하고 결과에 따라 이동하거나 오류를 표시합니다.
+   * @param values 제출 시점의 수정 폼 값
+   */
   async function handleSave(values: EditValues) {
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -93,6 +131,9 @@ export function UserEditForm({ user }: UserEditFormProps) {
     }
   }
 
+  /** 폼 제출 이벤트를 React Hook Form의 검증 및 저장 처리로 전달합니다.
+   * @param event 제출 이벤트
+   */
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     void handleSubmit(handleSave)(event);
   }

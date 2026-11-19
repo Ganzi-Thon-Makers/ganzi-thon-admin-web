@@ -7,7 +7,10 @@ import { getUserDetail } from '../api/get-user-detail';
 
 type DeleteUserActionResult = { ok: true } | { ok: false; message: string };
 
-/** 권한과 참여자 대상을 확인한 후에만 삭제합니다. */
+/** 권한과 참여자 대상을 확인한 후에만 삭제합니다.
+ * @param userId 삭제할 사용자 ID
+ * @returns 삭제 성공 여부 또는 사용자에게 표시할 실패 메시지
+ */
 export async function deleteUserAction(userId: string): Promise<DeleteUserActionResult> {
   const { accessToken, role } = await getServerAuthTokens();
   if (role !== 'SUPER_ADMIN') return { ok: false, message: '삭제 권한이 없습니다.' };

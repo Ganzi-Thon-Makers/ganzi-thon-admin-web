@@ -9,7 +9,11 @@ import { editSchema, type EditValues } from '../validation/user-edit';
 
 type UpdateUserActionResult = { ok: true } | { ok: false; message: string };
 
-/** 서버에서 권한과 입력값을 재확인한 뒤 사용자 정보를 수정합니다. */
+/** 서버에서 권한과 입력값을 재확인한 뒤 사용자 정보를 수정합니다.
+ * @param userId 수정할 사용자 ID
+ * @param input 클라이언트가 제출한 수정 폼 값
+ * @returns 수정 성공 여부 또는 사용자에게 표시할 실패 메시지
+ */
 export async function updateUserAction(
   userId: string,
   input: EditValues,

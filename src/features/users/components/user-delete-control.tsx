@@ -21,12 +21,16 @@ export function UserDeleteControl({ userId, userName }: UserDeleteControlProps) 
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
 
+  /** 삭제 진행 중에는 모달을 유지하고, 열릴 때 이전 오류를 지웁니다.
+   * @param nextOpen 변경할 모달 열림 상태
+   */
   function handleOpenChange(nextOpen: boolean) {
     if (deletingRef.current) return;
     setOpen(nextOpen);
     if (nextOpen) setError('');
   }
 
+  /** 확인을 받은 뒤 삭제 요청을 한 번 실행하고 결과를 처리합니다. */
   async function handleConfirm() {
     if (deletingRef.current) return;
     deletingRef.current = true;
