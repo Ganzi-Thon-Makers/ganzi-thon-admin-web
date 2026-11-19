@@ -24,7 +24,10 @@ export async function getUserDetail(
 ): Promise<UserDetailResult> {
   const result = await requestServerApi<UserDetailResponse>(
     `/backoffice/api/v1/users/${encodeURIComponent(userId)}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    {
+      baseUrlKey: 'backoffice',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
   );
 
   if (!result.ok) return { ok: false, status: result.status };

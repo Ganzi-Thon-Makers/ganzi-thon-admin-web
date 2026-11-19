@@ -27,7 +27,7 @@ const requiredFields: Record<RegistrationRole, RegistrationField[]> = {
   ADMIN: ['name', 'school', 'phoneNumber', 'accountId', 'password', 'part'],
   TEAM: ['accountId', 'password', 'teamNumber'],
 };
-interface DropdownOption {
+export interface DropdownOption {
   value: string;
   label: string;
 }
@@ -60,7 +60,14 @@ const partOptions = [
   { value: '디자인', label: '디자인' },
 ];
 
-function FormDropdown({ name, label, placeholder, value, options, onChange }: FormDropdownProps) {
+export function FormDropdown({
+  name,
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: FormDropdownProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const itemId = `${id}-options`;
@@ -153,7 +160,7 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
   );
 }
 
-const phonePattern = /^01[016789]-?\d{3,4}-?\d{4}$/;
+export const phonePattern = /^01[016789]-?\d{3,4}-?\d{4}$/;
 
 const registrationBaseSchema = z.object({
   role: z.union([z.enum(['PARTICIPANT', 'TEAM', 'ADMIN']), z.literal('')]),

@@ -1,0 +1,38 @@
+import { requestServerApi } from '@/lib/api/server-client';
+
+import type { EditValues } from '../validation/user-edit';
+
+/** 사용자 수정 API의 전체 교체 요청입니다. */
+export interface UpdateUserRequest {
+  loginId: string;
+  name: string;
+  school: string;
+  phoneNumber: string;
+  teamNumber: number;
+  part: string;
+  password?: string;
+}
+
+/** 검증된 폼 값을 PUT 요청 형식으로 변환합니다. */
+export function toUpdateUserRequest(values: EditValues): UpdateUserRequest {
+  return {
+    loginId: values.accountId,
+    name: values.name,
+    school: values.school,
+    phoneNumber: values.phoneNumber,
+    teamNumber: Number(values.teamNumber),
+    part: values.part,
+    ...(values.password ? { password: values.password } : {}),
+  };
+}
+
+/** 서버에서 인증된 사용자 정보 수정 요청을 전송합니다. */
+export function updateUser(userId: string, accessToken: string, values: EditValues) {
+  return requestServerApi<null>(`/backoffice/api/v1/users/${encodeURIComponent(userId)}`, {
+    method: 'PUT',
+    baseUrlKey: 'backoffice',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: toUpdateUserRequest(values),
+    responseType: 'empty',
+  });
+}
