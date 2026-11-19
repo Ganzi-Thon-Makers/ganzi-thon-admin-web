@@ -1,11 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'next/cache';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
 
 import type { TimetableItem } from '../_data/timetable-api';
 import { TimetableTable } from './timetable-table';
@@ -72,6 +73,11 @@ export function TimetableListClient({
   initialErrorMessage,
 }: TimetableListClientProps) {
   use(io());
+  const queryClient = useQueryClient();
+  const [deletingIds, setDeletingIds] = useState<number[]>([]);
+  const deletingIdsRef = useRef(new Set<number>());
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState('');
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<TimetableItem | null>(null);
   const { data, error, isFetching, refetch } = useQuery({
     queryKey: ['timetables'],
     queryFn: queryTimetables,
@@ -89,6 +95,91 @@ export function TimetableListClient({
     void refetch();
   }
 
+  /**
+   * 삭제 중이 아닌 일정이면 삭제 확인 모달을 연다.
+   * @param item 삭제할 일정
+   */
+  function handleDeleteClick(item: TimetableItem) {
+    if (deletingIdsRef.current.has(item.id)) return;
+    setPendingDeleteItem(item);
+  }
+
+  /**
+   * 삭제 확인 모달의 열림 상태를 갱신한다.
+   * @param open 다음 열림 상태
+   */
+  function handleDeleteModalOpenChange(open: boolean) {
+    if (!open) setPendingDeleteItem(null);
+  }
+
+  /**
+   * 모달을 닫고 대기 중인 일정을 삭제한다.
+   */
+  function handleConfirmDelete() {
+    const item = pendingDeleteItem;
+    setPendingDeleteItem(null);
+    if (item) void handleDeleteTimetable(item);
+  }
+
+  /**
+   * 사용자 확인 후 일정을 삭제하고 목록 캐시와 요청 상태를 갱신한다.
+   * @param item 삭제할 일정
+   */
+  async function handleDeleteTimetable(item: TimetableItem): Promise<void> {
+    if (deletingIdsRef.current.has(item.id)) return;
+
+    setDeleteErrorMessage('');
+    deletingIdsRef.current.add(item.id);
+
+    /**
+     * 삭제 중 목록에 식별자를 추가한다.
+     * @param currentIds 현재 삭제 중인 식별자 목록
+     * @returns 식별자가 추가된 목록
+     */
+    function addDeletingId(currentIds: number[]): number[] {
+      return currentIds.includes(item.id) ? currentIds : [...currentIds, item.id];
+    }
+
+    setDeletingIds(addDeletingId);
+    try {
+      const response = await fetch(`/api/timetables/${encodeURIComponent(String(item.id))}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const payload = await parseJsonSafely(response);
+        setDeleteErrorMessage(
+          payload?.message || '일정을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        );
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['timetables'] });
+    } catch {
+      setDeleteErrorMessage('서버와 통신할 수 없습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      deletingIdsRef.current.delete(item.id);
+
+      /**
+       * 삭제 중 목록에서 식별자를 제거한다.
+       * @param currentIds 현재 삭제 중인 식별자 목록
+       * @returns 식별자가 제거된 목록
+       */
+      function removeDeletingId(currentIds: number[]): number[] {
+        /**
+         * 제거 대상 일정이 아닌 식별자인지 확인한다.
+         * @param id 확인할 일정 식별자
+         * @returns 유지 여부
+         */
+        function isNotDeletingId(id: number): boolean {
+          return id !== item.id;
+        }
+
+        return currentIds.filter(isNotDeletingId);
+      }
+
+      setDeletingIds(removeDeletingId);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-7">
       <div className="flex justify-end">
@@ -102,6 +193,11 @@ export function TimetableListClient({
           일정 등록
         </Button>
       </div>
+      {deleteErrorMessage ? (
+        <p role="alert" className="text-body-r-14 text-red-400">
+          {deleteErrorMessage}
+        </p>
+      ) : null}
       <div className="overflow-x-auto">
         {isFetching && data === undefined ? (
           <TimetableListLoading />
@@ -119,9 +215,22 @@ export function TimetableListClient({
             </Button>
           </div>
         ) : (
-          <TimetableTable timetables={data ?? []} />
+          <TimetableTable
+            timetables={data ?? []}
+            deletingIds={deletingIds}
+            onDelete={handleDeleteClick}
+          />
         )}
       </div>
+      <Modal
+        open={pendingDeleteItem !== null}
+        onOpenChange={handleDeleteModalOpenChange}
+        title="일정을 삭제할까요?"
+        description="삭제 후 되돌릴 수 없습니다."
+        cancelLabel="취소"
+        confirmLabel="일정 삭제"
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
