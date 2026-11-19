@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 
 import type { TimetableItem } from '../_data/timetable-api';
@@ -51,10 +53,18 @@ export function formatTimetableTimeRange(startTime: string, endTime: string): st
 }
 
 /**
- * 일정 한 행을 렌더링하고 삭제 동작을 제공하는 컴포넌트입니다.
- * @param props 행 데이터와 삭제 상태 / 핸들러
+ * 일정 한 행을 렌더링하고 수정 / 삭제 동작을 제공하는 컴포넌트입니다.
+ * @param props 행 데이터와 수정 / 삭제 상태 및 핸들러
  */
 function TimetableRow({ item, deletingIds, onDelete }: TimetableRowProps) {
+  const router = useRouter();
+
+  /**
+   * 수정 버튼 클릭 시 일정 수정 화면으로 이동한다.
+   */
+  function handleEditClick() {
+    router.push(`/timetables/${item.id}/edit`);
+  }
   const isDeleting = deletingIds?.includes(item.id) ?? false;
 
   /**
@@ -85,7 +95,8 @@ function TimetableRow({ item, deletingIds, onDelete }: TimetableRowProps) {
             type="button"
             variant="secondary"
             size="xs"
-            disabled
+            disabled={isDeleting}
+            onClick={handleEditClick}
             className="h-6 w-[98px] px-0 py-0 text-caption-sb-12 disabled:opacity-60"
             aria-label={`${item.title} 수정`}
           >
