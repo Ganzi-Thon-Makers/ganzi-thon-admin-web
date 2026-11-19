@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import type { AdminRole, User } from '@/features/users/types/user';
 
+import { UserDeleteControl } from './user-delete-control';
+
 interface UserDetailViewProps {
   /** 상세 화면에 표시할 사용자 정보 */
   user: User;
@@ -118,21 +120,14 @@ export function UserDetailView({ user, role }: UserDetailViewProps) {
 
           {isSuperadmin ? (
             <div className="mt-7 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Button
-                type="button"
-                variant="secondary"
-                size="lg"
-                disabled
-                className="h-12 w-full bg-gray-700 px-6 text-body-sb-16 text-gray-50 disabled:bg-gray-700 disabled:text-gray-50 sm:w-[136px]"
-              >
-                사용자 삭제
-              </Button>
+              <UserDeleteControl userId={user.id} userName={user.name} />
               <Button
                 type="button"
                 variant="primary"
                 size="lg"
-                disabled
-                className="h-12 w-full bg-red-500 px-6 text-body-sb-16 text-gray-50 disabled:bg-red-500 disabled:text-gray-50 sm:w-[136px]"
+                nativeButton={false}
+                render={<Link href={`/users/${encodeURIComponent(user.id)}/edit`} />}
+                className="h-12 w-full bg-red-500 px-6 text-body-sb-16 text-gray-50 sm:w-[136px]"
               >
                 정보 수정
               </Button>
