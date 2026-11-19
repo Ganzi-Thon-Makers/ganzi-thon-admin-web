@@ -1,5 +1,7 @@
 'use server';
 
+import { redirect } from 'next/navigation';
+
 import {
   requestBackofficeLogin,
   requestBackofficeLogout,
@@ -46,12 +48,7 @@ export async function loginAction(
   }
 
   await setAuthCookies(result.data);
-
-  return {
-    status: 'success',
-    loginId,
-    role: result.data.role,
-  };
+  redirect('/users');
 }
 
 /**
