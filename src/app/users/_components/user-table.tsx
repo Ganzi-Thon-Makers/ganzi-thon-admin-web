@@ -65,7 +65,7 @@ export function UserTable({ users, onViewDetails }: UserTableProps) {
           <button
             type="button"
             onClick={handleRowDetailsClick}
-            className="inline-flex items-center gap-1 text-body-r-16 text-gray-100 transition-colors hover:text-static-white focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            className="inline-flex cursor-pointer items-center gap-1 text-body-r-16 text-gray-100 transition-colors hover:text-static-white focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             aria-label={`${user.name} 상세 보기`}
           >
             상세 보기

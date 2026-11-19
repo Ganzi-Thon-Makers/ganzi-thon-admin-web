@@ -1,4 +1,5 @@
 import type { UserTableItem } from '@/app/users/_components/user-table';
+import type { User } from '@/features/users/types/user';
 import { requestServerApi } from '@/lib/api/server-client';
 import type { ApiErrorCode, ApiResult, ApiSuccessResponse } from '@/lib/api/types';
 
@@ -11,6 +12,20 @@ interface UserListResponseItem {
   completed: boolean;
   teamNumber: number;
 }
+
+interface UserDetailResponseItem extends UserListResponseItem {
+  loginId: string;
+  role: string;
+  part: string;
+}
+
+const PART_LABELS: Record<string, string> = {
+  PLAN: '기획',
+  DESIGN: '디자인',
+  WEB: '웹',
+  APP: '앱',
+  SERVER: '서버',
+};
 
 export interface UserListQuery {
   keyword?: string;
@@ -89,5 +104,80 @@ export function requestUserList(
     endpoint,
     { headers: { Authorization: `Bearer ${accessToken}` } },
     validateUserListResponse,
+  );
+}
+
+/** 상세 조회 응답을 기존 사용자 상세 화면의 표시 데이터로 변환합니다.
+ * @param user API가 반환한 참여자
+ * @returns 상세 화면에서 사용하는 사용자 정보
+ */
+function toUserDetail(user: UserDetailResponseItem): User {
+  return {
+    id: String(user.id),
+    name: user.name,
+    school: user.school,
+    phoneNumber: user.phoneNumber,
+    hasEnteredLuckyDraw: user.luckyDrawEntered,
+    hasCompletedCourse: user.completed,
+    teamNumber: String(user.teamNumber).padStart(2, '0'),
+    accountId: user.loginId,
+    part: PART_LABELS[user.part],
+  };
+}
+
+/** 상세 조회 응답의 필수 값과 참여자 역할을 확인합니다.
+ * @param payload 서버의 성공 응답
+ * @returns 변환된 참여자 정보 또는 응답 형식·대상 오류
+ */
+function validateUserDetailResponse(
+  payload: ApiSuccessResponse<UserDetailResponseItem> | null,
+): ApiResult<User> {
+  const user = payload?.data;
+  if (!user || typeof user !== 'object' || typeof user.role !== 'string') {
+    return {
+      ok: false,
+      status: 502,
+      code: 'UNKNOWN_ERROR',
+      message: '사용자 상세 응답 형식이 올바르지 않습니다.',
+    };
+  }
+  if (user.role !== 'PARTICIPANT') {
+    return { ok: false, status: 404, code: 'UNKNOWN_ERROR', message: '사용자를 찾을 수 없습니다.' };
+  }
+  if (
+    !Number.isSafeInteger(user.id) ||
+    user.id < 1 ||
+    typeof user.loginId !== 'string' ||
+    typeof user.name !== 'string' ||
+    typeof user.school !== 'string' ||
+    typeof user.phoneNumber !== 'string' ||
+    !Number.isInteger(user.teamNumber) ||
+    user.teamNumber < 1 ||
+    typeof user.luckyDrawEntered !== 'boolean' ||
+    typeof user.completed !== 'boolean' ||
+    typeof user.part !== 'string' ||
+    !Object.hasOwn(PART_LABELS, user.part)
+  ) {
+    return {
+      ok: false,
+      status: 502,
+      code: 'UNKNOWN_ERROR',
+      message: '사용자 상세 응답 형식이 올바르지 않습니다.',
+    };
+  }
+
+  return { ok: true, data: toUserDetail(user) };
+}
+
+/** 인증된 관리자 계정으로 참여자 상세정보를 조회합니다.
+ * @param accessToken 서버 쿠키에서 읽은 액세스 토큰
+ * @param userId 조회할 사용자 식별자
+ * @returns 사용자 상세정보 또는 API 오류
+ */
+export function requestUserDetail(accessToken: string, userId: string): Promise<ApiResult<User>> {
+  return requestServerApi<User, ApiErrorCode, UserDetailResponseItem>(
+    `/backoffice/api/v1/users/${encodeURIComponent(userId)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+    validateUserDetailResponse,
   );
 }

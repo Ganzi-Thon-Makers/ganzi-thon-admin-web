@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
-import { getUserDetail } from '@/features/users/api/get-user-detail';
 import { UserDetailView } from '@/features/users/components/user-detail-view';
 import { getServerAuthTokens } from '@/lib/auth/cookies';
+
+import { requestUserDetail } from '../_data/user-api';
 
 export const instant = false;
 
@@ -23,7 +24,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { accessToken, role } = await getServerAuthTokens();
   if (!accessToken || !role) redirect('/');
 
-  const result = await getUserDetail(userId, accessToken);
+  const result = await requestUserDetail(accessToken, userId);
   if (!result.ok) {
     if (result.status === 404) notFound();
 
@@ -56,6 +57,6 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   }
 
   return (
-    <UserDetailView user={result.user} role={role === 'SUPER_ADMIN' ? 'superadmin' : 'admin'} />
+    <UserDetailView user={result.data} role={role === 'SUPER_ADMIN' ? 'superadmin' : 'admin'} />
   );
 }
