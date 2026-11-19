@@ -59,8 +59,6 @@ export interface ApiErrorResolutionOptions<TErrorCode extends string = ApiErrorC
 export interface ServerApiRequestOptions<
   TErrorCode extends string = ApiErrorCode,
 > extends ApiErrorResolutionOptions<TErrorCode> {
-  /** 요청할 서버. 기본값은 기존 인증 API 서버입니다. */
-  baseUrlKey?: 'default' | 'backoffice';
   method?: HttpMethod;
   headers?: HeadersInit;
   body?: unknown;

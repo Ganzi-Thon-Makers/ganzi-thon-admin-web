@@ -29,7 +29,6 @@ export async function getUserDetail(
   const result = await requestServerApi<UserDetailResponse>(
     `/backoffice/api/v1/users/${encodeURIComponent(userId)}`,
     {
-      baseUrlKey: 'backoffice',
       headers: { Authorization: `Bearer ${accessToken}` },
     },
   );

@@ -8,7 +8,6 @@ import { requestServerApi } from '@/lib/api/server-client';
 export function deleteUser(userId: string, accessToken: string) {
   return requestServerApi<null>(`/backoffice/api/v1/users/${encodeURIComponent(userId)}`, {
     method: 'DELETE',
-    baseUrlKey: 'backoffice',
     headers: { Authorization: `Bearer ${accessToken}` },
     responseType: 'empty',
   });

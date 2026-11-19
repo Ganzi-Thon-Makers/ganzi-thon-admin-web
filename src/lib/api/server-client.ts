@@ -125,10 +125,7 @@ export async function requestServerApi<
     payload: ApiSuccessResponse<TResponse> | null,
   ) => ApiResult<TData, TErrorCode>,
 ): Promise<ApiResult<TData, TErrorCode>> {
-  const baseUrl =
-    options.baseUrlKey === 'backoffice'
-      ? process.env.BACKOFFICE_API_BASE_URL?.trim().replace(/\/+$/, '')
-      : getApiBaseUrl();
+  const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
     return {
       ok: false,

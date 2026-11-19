@@ -38,7 +38,6 @@ export function toUpdateUserRequest(values: EditValues): UpdateUserRequest {
 export function updateUser(userId: string, accessToken: string, values: EditValues) {
   return requestServerApi<null>(`/backoffice/api/v1/users/${encodeURIComponent(userId)}`, {
     method: 'PUT',
-    baseUrlKey: 'backoffice',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: toUpdateUserRequest(values),
     responseType: 'empty',
