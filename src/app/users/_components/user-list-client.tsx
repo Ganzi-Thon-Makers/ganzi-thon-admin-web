@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 
+import type { UserListQuery } from '../_data/user-api';
 import { UserFilters, type UserStatusFilter } from './user-filters';
 import { UserTable, type UserTableItem } from './user-table';
 
@@ -15,6 +16,7 @@ const USERS_PER_PAGE = 8;
 export interface UserListClientProps {
   /** 검색 및 필터할 사용자 원본 목록 */
   users: UserTableItem[];
+  initialQuery: UserListQuery;
   /** 사용자 상세 보기 선택 콜백 */
   onViewDetails: (userId: string) => void;
 }
@@ -55,12 +57,35 @@ function compareUsersByName(firstUser: UserTableItem, secondUser: UserTableItem)
   return firstUser.name.localeCompare(secondUser.name, 'ko-KR');
 }
 
+/** API 조건을 필터 선택값으로 변환합니다.
+ * @param value 응모 또는 수료 여부
+ * @returns 화면의 선택값
+ */
+function toStatusFilter(value: boolean | undefined): UserStatusFilter {
+  if (value === undefined) return 'all';
+  return value ? 'yes' : 'no';
+}
+
+/** 현재 주소에서 변경된 검색 조건만 갱신합니다.
+ * @param name 변경할 쿼리 파라미터
+ * @param value 적용할 값 또는 전체 조회를 뜻하는 빈 문자열
+ * @returns 반환값 없음
+ */
+function updateFilterUrl(name: keyof UserListQuery, value: string) {
+  const url = new URL(window.location.href);
+  if (value) url.searchParams.set(name, value);
+  else url.searchParams.delete(name);
+  window.history.replaceState(null, '', url);
+}
+
 /** 검색어와 상태 필터를 적용한 사용자 목록을 표시합니다. */
-export function UserListClient({ users, onViewDetails }: UserListClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [keyword, setKeyword] = useState('');
-  const [luckyDrawFilter, setLuckyDrawFilter] = useState<UserStatusFilter>('all');
-  const [completionFilter, setCompletionFilter] = useState<UserStatusFilter>('all');
+export function UserListClient({ users, initialQuery, onViewDetails }: UserListClientProps) {
+  const [searchTerm, setSearchTerm] = useState(initialQuery.keyword ?? '');
+  const [keyword, setKeyword] = useState(initialQuery.keyword ?? '');
+  const [luckyDrawFilter, setLuckyDrawFilter] = useState(
+    toStatusFilter(initialQuery.luckyDrawEntered),
+  );
+  const [completionFilter, setCompletionFilter] = useState(toStatusFilter(initialQuery.completed));
   const [currentPage, setCurrentPage] = useState(1);
   const hasStatusFilter = luckyDrawFilter !== 'all' || completionFilter !== 'all';
   const hasActiveCondition = Boolean(searchTerm.trim()) || hasStatusFilter;
@@ -70,8 +95,11 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
      * @returns 이전 타이머를 취소하는 정리 함수
      */
     function scheduleKeywordUpdate() {
+      if (searchTerm.trim() === keyword) return;
+
       /** 타이머가 완료되면 앞뒤 공백을 제거한 검색어를 반영합니다. */
       function applyKeyword() {
+        updateFilterUrl('keyword', searchTerm.trim());
         setKeyword(searchTerm.trim());
       }
 
@@ -84,7 +112,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
 
       return clearKeywordTimer;
     },
-    [searchTerm],
+    [searchTerm, keyword],
   );
 
   const isSearchSettling = searchTerm.trim() !== keyword;
@@ -100,7 +128,12 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
   const { data, isPending, error } = useQuery({
     queryKey: ['users', keyword, luckyDrawFilter, completionFilter],
     queryFn: queryUsers,
-    initialData: !keyword && !hasStatusFilter ? users : undefined,
+    initialData:
+      keyword === (initialQuery.keyword ?? '') &&
+      luckyDrawFilter === toStatusFilter(initialQuery.luckyDrawEntered) &&
+      completionFilter === toStatusFilter(initialQuery.completed)
+        ? users
+        : undefined,
     staleTime: 30_000,
     retry: false,
   });
@@ -123,6 +156,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
    * @param value 변경된 응모 여부 필터
    */
   function handleLuckyDrawFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('luckyDrawEntered', value === 'all' ? '' : String(value === 'yes'));
     setLuckyDrawFilter(value);
     setCurrentPage(1);
   }
@@ -131,6 +165,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
    * @param value 변경된 수료 여부 필터
    */
   function handleCompletionFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('completed', value === 'all' ? '' : String(value === 'yes'));
     setCompletionFilter(value);
     setCurrentPage(1);
   }
