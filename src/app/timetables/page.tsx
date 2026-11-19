@@ -1,3 +1,4 @@
+import { io } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -12,6 +13,7 @@ export const instant = false;
 
 async function TimetableListData() {
   const result = await getTimetableList();
+  await io();
   return result.ok ? (
     <TimetableListClient initialTimetables={result.data} />
   ) : (

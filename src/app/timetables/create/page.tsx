@@ -1,3 +1,4 @@
+import { io } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -17,6 +18,7 @@ export const instant = false;
  */
 async function TimetableCreateData() {
   const result = await getTimetableList();
+  await io();
   return <TimetableCreateForm initialTimetables={result.ok ? result.data : undefined} />;
 }
 
