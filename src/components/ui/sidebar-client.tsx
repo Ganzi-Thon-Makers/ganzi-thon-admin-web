@@ -22,7 +22,7 @@ export interface SidebarNavItem {
   iconSize?: number;
 }
 
-export interface SidebarProps extends HTMLAttributes<HTMLElement> {
+export interface SidebarClientProps extends HTMLAttributes<HTMLElement> {
   /** 사이드바 역할 변형 (기본값: `'admin'`) */
   variant?: SidebarVariant;
   /** 현재 활성화된 메뉴 ID */
@@ -126,21 +126,21 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
 ];
 
 /**
- * 부스 관리자와 슈퍼 관리자 역할을 지원하는 공용 Sidebar 컴포넌트입니다.
+ * 부스 관리자와 슈퍼 관리자 역할을 지원하는 공용 SidebarClient 컴포넌트입니다.
  *
  * 전달된 variant에 따라 기본 내비게이션 메뉴와 브랜드 로고를 다르게 렌더링하며,
  * 메뉴 선택 및 로그아웃 이벤트를 상위로 전달합니다.
  *
  * @example
  * ```tsx
- * <Sidebar
+ * <SidebarClient
  *   variant="sidebar"
  *   activeMenuId="users"
  *   onSelectMenu={(id) => console.log(id)}
  * />
  * ```
  */
-export function Sidebar({
+export function SidebarClient({
   className,
   variant = 'admin',
   activeMenuId,
@@ -148,7 +148,7 @@ export function Sidebar({
   onLogout,
   customNavItems,
   ...props
-}: SidebarProps) {
+}: SidebarClientProps) {
   const [internalActiveId, setInternalActiveId] = useState<string>(activeMenuId ?? '');
 
   const currentActiveId = activeMenuId ?? internalActiveId;
@@ -305,4 +305,4 @@ export function Sidebar({
   );
 }
 
-export default Sidebar;
+export default SidebarClient;

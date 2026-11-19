@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useState } from 'react';
 
-import { Sidebar } from '@/components/ui/sidebar';
+import { SidebarClient } from '@/components/ui/sidebar-client';
 
 const meta = {
-  title: 'Components/Sidebar',
-  component: Sidebar,
+  title: 'Components/SidebarClient',
+  component: SidebarClient,
   parameters: {
     layout: 'fullscreen',
   },
-} satisfies Meta<typeof Sidebar>;
+} satisfies Meta<typeof SidebarClient>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -24,13 +24,13 @@ function renderGallery() {
       <div className="flex h-full min-h-0 flex-col gap-2">
         <span className="text-body-sb-14 text-gray-400">Admin</span>
         <div className="min-h-0 w-64 flex-1">
-          <Sidebar variant="admin" activeMenuId="users" className="min-h-0" />
+          <SidebarClient variant="admin" activeMenuId="users" className="min-h-0" />
         </div>
       </div>
       <div className="flex h-full min-h-0 flex-col gap-2">
         <span className="text-body-sb-14 text-gray-400">SuperAdmin</span>
         <div className="min-h-0 w-64 flex-1">
-          <Sidebar variant="superadmin" className="min-h-0" />
+          <SidebarClient variant="superadmin" className="min-h-0" />
         </div>
       </div>
     </div>
@@ -41,7 +41,7 @@ export const Gallery: Story = {
   render: renderGallery,
 };
 
-/** 활성 메뉴 상태를 관리하며 Sidebar variant의 선택 인터랙션을 렌더링합니다.
+/** 활성 메뉴 상태를 관리하며 SidebarClient variant의 선택 인터랙션을 렌더링합니다.
  * @returns 메뉴 선택이 가능한 관리자 사이드바
  */
 function renderAdminVariant() {
@@ -56,7 +56,7 @@ function renderAdminVariant() {
 
   return (
     <div className="h-screen bg-gray-900 p-8">
-      <Sidebar
+      <SidebarClient
         variant="admin"
         activeMenuId={activeMenuId}
         onSelectMenu={handleSelectMenu}

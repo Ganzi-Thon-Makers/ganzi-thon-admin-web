@@ -1,5 +1,5 @@
+import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Icon } from '@/components/ui/icon';
-import { Sidebar } from '@/components/ui/sidebar';
 import { getServerAuthSession } from '@/lib/auth/cookies';
 
 import { UserListSection } from './_components/user-list-section';
@@ -13,7 +13,7 @@ export default async function UsersPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
-      <Sidebar
+      <AuthenticatedSidebar
         variant={sidebarVariant}
         activeMenuId="users"
         className="sticky top-0 h-screen min-h-0 self-start"
