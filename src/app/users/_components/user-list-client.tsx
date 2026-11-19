@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -195,19 +196,12 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
           >
             목록 다운로드
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            aria-disabled="true"
-            aria-describedby="user-add-unavailable"
-            className="h-12 w-40 rounded-[4px] bg-red-500 px-6 text-body-sb-16 text-static-white hover:bg-red-500 active:bg-red-500 aria-disabled:cursor-not-allowed"
+          <Link
+            href="/users/create"
+            className="inline-flex h-12 w-40 items-center justify-center rounded-[4px] bg-red-500 px-6 text-body-sb-16 text-static-white hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             사용자 추가
-          </Button>
-          <span id="user-add-unavailable" className="sr-only">
-            사용자 추가 기능은 아직 사용할 수 없습니다.
-          </span>
+          </Link>
         </div>
       </div>
 
