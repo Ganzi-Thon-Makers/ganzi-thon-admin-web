@@ -212,6 +212,7 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
   const {
     register,
     control,
+    reset,
     setValue,
     formState,
     handleSubmit: handleFormSubmit,
@@ -233,11 +234,21 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
   const values = useWatch({ control });
   const role = values.role ?? '';
 
-  /** 선택한 계정 역할로 표시할 폼을 전환합니다. 숨겨진 필드의 값은 유지합니다.
+  /** 계정 역할을 바꾸고 이전 역할에서 입력한 값을 초기화합니다.
    * @param value 새로 선택한 역할
    */
   function handleRoleChange(value: string) {
-    setValue('role', value as RegistrationRole, { shouldValidate: true, shouldDirty: true });
+    reset({
+      role: value as RegistrationRole,
+      name: '',
+      school: '',
+      phoneNumber: '',
+      teamNumber: '',
+      accountId: '',
+      password: '',
+      part: '',
+    });
+    setResultMessage('');
   }
 
   /** 선택한 항목을 폼 상태에 반영합니다.
@@ -262,7 +273,7 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
     handleSelectionChange('part', value);
   }
 
-  /** 등록 API를 호출하고 역할에 따라 이동하거나 결과를 안내합니다.
+  /** 등록 API 성공 시 목록으로 이동하고 실패 시 오류를 안내합니다.
    * @param input 검증을 통과한 등록 입력값
    */
   async function handleSubmit(input: CreateValues) {
@@ -275,13 +286,8 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
       if (!result.ok) {
         setResultError(true);
         setResultMessage(result.message);
-      } else if (input.role === 'PARTICIPANT') {
-        router.replace('/users');
       } else {
-        setResultError(false);
-        setResultMessage(
-          `${input.role === 'TEAM' ? '팀' : '어드민'} 계정이 등록되었습니다. 전체 사용자 목록에는 참여자만 표시됩니다.`,
-        );
+        router.replace('/users');
       }
     } catch {
       setResultError(true);
