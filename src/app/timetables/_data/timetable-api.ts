@@ -128,6 +128,74 @@ export async function getTimetableList(): Promise<ApiResult<TimetableItem[]>> {
   return requestTimetableList(accessToken);
 }
 
+/**
+ * 일정 식별자를 안전한 양의 정수로 검증한다.
+ * @param timetableId 검증할 일정 식별자
+ * @returns 유효한 식별자 또는 입력 오류
+ */
+export function validateTimetableId(timetableId: unknown): ApiResult<number> {
+  const id =
+    typeof timetableId === 'number'
+      ? timetableId
+      : typeof timetableId === 'string' && /^[1-9]\d*$/.test(timetableId)
+        ? Number(timetableId)
+        : NaN;
+  if (!Number.isSafeInteger(id) || id <= 0)
+    return {
+      ok: false,
+      status: 400,
+      code: 'INVALID_INPUT',
+      message: '유효하지 않은 일정 식별자입니다.',
+    };
+  return { ok: true, data: id };
+}
+
+/**
+ * 인증 토큰으로 타임테이블 일정을 삭제한다.
+ * @param accessToken 서버에서 읽은 액세스 토큰
+ * @param timetableId 삭제할 일정 식별자
+ * @returns 삭제 결과 또는 API 오류
+ */
+export function requestDeleteTimetable(
+  accessToken: string,
+  timetableId: number,
+): Promise<ApiResult<null>> {
+  return requestServerApi<null>(
+    `/backoffice/api/v1/timetables/${encodeURIComponent(String(timetableId))}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      responseType: 'empty',
+    },
+  );
+}
+
+/**
+ * 슈퍼 관리자 권한과 식별자를 확인하고 일정을 삭제한다.
+ * @param timetableId 삭제할 일정 식별자
+ * @returns 삭제 결과 또는 인증 / 권한 / 입력 오류
+ */
+export async function deleteTimetable(timetableId: unknown): Promise<ApiResult<null>> {
+  const { accessToken, role } = await getServerAuthTokens();
+  if (!accessToken)
+    return {
+      ok: false,
+      status: 401,
+      code: 'UNAUTHORIZED',
+      message: '로그인이 필요합니다. 다시 로그인해주세요.',
+    };
+  if (role !== 'SUPER_ADMIN')
+    return {
+      ok: false,
+      status: 403,
+      code: 'FORBIDDEN',
+      message: '타임테이블 관리 권한이 없습니다.',
+    };
+  const validated = validateTimetableId(timetableId);
+  if (!validated.ok) return validated;
+  return requestDeleteTimetable(accessToken, validated.data);
+}
+
 /** 타임테이블 행사 기준 일자 */
 export const TIMETABLE_EVENT_DATE = '2026-11-21';
 
