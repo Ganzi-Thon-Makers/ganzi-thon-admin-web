@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { type HTMLAttributes, type MouseEvent, type ReactNode, useState } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
@@ -20,6 +21,8 @@ export interface SidebarNavItem {
   icon: IconName;
   /** 아이콘 크기 */
   iconSize?: number;
+  /** 이동할 링크 경로 */
+  href?: string;
 }
 
 export interface SidebarClientProps extends HTMLAttributes<HTMLElement> {
@@ -45,32 +48,54 @@ interface SidebarNavItemButtonProps {
 }
 
 /**
- * 관리자 사이드바의 개별 내비게이션 메뉴 버튼 컴포넌트입니다.
+ * 관리자 사이드바의 개별 내비게이션 메뉴 컴포넌트입니다.
+ *
+ * 링크 경로(`href`) 유무에 따라 Link 또는 button 요소로 렌더링합니다.
  */
 function SidebarNavItemButton({ item, isActive, onSelect }: SidebarNavItemButtonProps) {
   /**
-   * 메뉴 버튼 클릭 시 부모 콜백으로 메뉴 ID를 전달합니다.
+   * 메뉴 항목 클릭 시 부모 콜백으로 메뉴 ID를 전달합니다.
    */
   const handleItemClick = () => {
     onSelect(item.id);
   };
+
+  const className = cn(
+    'flex w-54 shrink-0 cursor-pointer items-center gap-3 rounded-md p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    isActive
+      ? 'bg-red-500 text-white hover:bg-red-500 active:bg-red-500'
+      : 'bg-transparent text-white hover:bg-gray-700 active:bg-gray-700',
+  );
+  const content = (
+    <>
+      <Icon name={item.icon} size={item.iconSize} />
+      <span className="truncate text-body-sb-16 leading-normal font-semibold tracking-[-0.16px]">
+        {item.label}
+      </span>
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <Link
+        href={item.href}
+        onClick={handleItemClick}
+        aria-current={isActive ? 'page' : undefined}
+        className={className}
+      >
+        {content}
+      </Link>
+    );
+  }
 
   return (
     <button
       type="button"
       onClick={handleItemClick}
       aria-current={isActive ? 'page' : undefined}
-      className={cn(
-        'flex w-54 shrink-0 cursor-pointer items-center gap-3 rounded-md p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        isActive
-          ? 'bg-red-500 text-white hover:bg-red-500 active:bg-red-500'
-          : 'bg-transparent text-white hover:bg-gray-700 active:bg-gray-700',
-      )}
+      className={className}
     >
-      <Icon name={item.icon} size={item.iconSize} />
-      <span className="truncate text-body-sb-16 leading-normal font-semibold tracking-[-0.16px]">
-        {item.label}
-      </span>
+      {content}
     </button>
   );
 }
@@ -82,6 +107,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     label: '사용자',
     icon: 'user',
     iconSize: 22,
+    href: '/users',
   },
   {
     id: 'projects',
@@ -102,6 +128,7 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
     label: '사용자 관리',
     icon: 'user',
     iconSize: 22,
+    href: '/users',
   },
   {
     id: 'projects',
@@ -112,6 +139,7 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
     id: 'votes',
     label: '투표 관리',
     icon: 'stamp',
+    href: '/votes',
   },
   {
     id: 'timetable',
