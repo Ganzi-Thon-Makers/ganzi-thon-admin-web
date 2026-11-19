@@ -1,11 +1,13 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 
+import type { UserListQuery } from '../_data/user-api';
 import { UserFilters, type UserStatusFilter } from './user-filters';
 import { UserTable, type UserTableItem } from './user-table';
 
@@ -14,36 +16,36 @@ const USERS_PER_PAGE = 8;
 export interface UserListClientProps {
   /** 검색 및 필터할 사용자 원본 목록 */
   users: UserTableItem[];
+  initialQuery: UserListQuery;
   /** 사용자 상세 보기 선택 콜백 */
   onViewDetails: (userId: string) => void;
 }
 
-/** 검색어와 상태 필터에 맞는 사용자 판별 함수를 만듭니다.
- * @param normalizedSearchTerm 앞뒤 공백을 제거한 검색어
- * @param luckyDrawFilter 응모 여부 필터
- * @param completionFilter 수료 여부 필터
- * @returns 사용자별 일치 여부를 확인하는 함수
+/** 검색·필터 조건에 맞는 참여자를 서버 경로를 통해 조회합니다.
+ * @param keyword 이름 검색어
+ * @param luckyDrawFilter 응모 여부
+ * @param completionFilter 수료 여부
+ * @param signal 취소된 요청을 중단하는 신호
+ * @returns 조건에 맞는 전체 사용자 목록
  */
-function createUserFilterPredicate(
-  normalizedSearchTerm: string,
+async function fetchUsers(
+  keyword: string,
   luckyDrawFilter: UserStatusFilter,
   completionFilter: UserStatusFilter,
-): (user: UserTableItem) => boolean {
-  /** 이름과 두 상태 필터가 모두 일치하는지 확인합니다.
-   * @param user 검사할 사용자
-   * @returns 모든 검색 및 필터 조건에 일치하면 true
-   */
-  function matchesUserFilters(user: UserTableItem) {
-    const matchesName = user.name.includes(normalizedSearchTerm);
-    const matchesLuckyDraw =
-      luckyDrawFilter === 'all' || user.hasEnteredLuckyDraw === (luckyDrawFilter === 'yes');
-    const matchesCompletion =
-      completionFilter === 'all' || user.hasCompletedCourse === (completionFilter === 'yes');
-
-    return matchesName && matchesLuckyDraw && matchesCompletion;
+  signal: AbortSignal,
+): Promise<UserTableItem[]> {
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', keyword);
+  if (luckyDrawFilter !== 'all') params.set('luckyDrawEntered', String(luckyDrawFilter === 'yes'));
+  if (completionFilter !== 'all') params.set('completed', String(completionFilter === 'yes'));
+  const search = params.toString();
+  const response = await fetch(`/api/users${search ? `?${search}` : ''}`, { signal });
+  const body = (await response.json()) as { data?: UserTableItem[]; message?: string };
+  if (!response.ok) {
+    throw new Error(body.message || '사용자 목록을 불러오지 못했습니다.');
   }
-
-  return matchesUserFilters;
+  if (!Array.isArray(body.data)) throw new Error('사용자 목록 응답 형식이 올바르지 않습니다.');
+  return body.data;
 }
 
 /** 두 사용자의 이름을 한국어 가나다순으로 비교합니다.
@@ -55,22 +57,88 @@ function compareUsersByName(firstUser: UserTableItem, secondUser: UserTableItem)
   return firstUser.name.localeCompare(secondUser.name, 'ko-KR');
 }
 
+/** API 조건을 필터 선택값으로 변환합니다.
+ * @param value 응모 또는 수료 여부
+ * @returns 화면의 선택값
+ */
+function toStatusFilter(value: boolean | undefined): UserStatusFilter {
+  if (value === undefined) return 'all';
+  return value ? 'yes' : 'no';
+}
+
+/** 현재 주소에서 변경된 검색 조건만 갱신합니다.
+ * @param name 변경할 쿼리 파라미터
+ * @param value 적용할 값 또는 전체 조회를 뜻하는 빈 문자열
+ * @returns 반환값 없음
+ */
+function updateFilterUrl(name: keyof UserListQuery, value: string) {
+  const url = new URL(window.location.href);
+  if (value) url.searchParams.set(name, value);
+  else url.searchParams.delete(name);
+  window.history.replaceState(null, '', url);
+}
+
 /** 검색어와 상태 필터를 적용한 사용자 목록을 표시합니다. */
-export function UserListClient({ users, onViewDetails }: UserListClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [luckyDrawFilter, setLuckyDrawFilter] = useState<UserStatusFilter>('all');
-  const [completionFilter, setCompletionFilter] = useState<UserStatusFilter>('all');
+export function UserListClient({ users, initialQuery, onViewDetails }: UserListClientProps) {
+  const [searchTerm, setSearchTerm] = useState(initialQuery.keyword ?? '');
+  const [keyword, setKeyword] = useState(initialQuery.keyword ?? '');
+  const [luckyDrawFilter, setLuckyDrawFilter] = useState(
+    toStatusFilter(initialQuery.luckyDrawEntered),
+  );
+  const [completionFilter, setCompletionFilter] = useState(toStatusFilter(initialQuery.completed));
   const [currentPage, setCurrentPage] = useState(1);
   const hasStatusFilter = luckyDrawFilter !== 'all' || completionFilter !== 'all';
+  const hasActiveCondition = Boolean(searchTerm.trim()) || hasStatusFilter;
 
-  // 검색어 및 상태 필터를 적용한 뒤 이름 가나다순으로 정렬합니다.
-  const filteredUsers = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim();
+  useEffect(
+    /** 검색어 변경 후 300ms가 지나면 API 요청용 검색어를 갱신합니다.
+     * @returns 이전 타이머를 취소하는 정리 함수
+     */
+    function scheduleKeywordUpdate() {
+      if (searchTerm.trim() === keyword) return;
 
-    return users
-      .filter(createUserFilterPredicate(normalizedSearchTerm, luckyDrawFilter, completionFilter))
-      .toSorted(compareUsersByName);
-  }, [users, searchTerm, luckyDrawFilter, completionFilter]);
+      /** 타이머가 완료되면 앞뒤 공백을 제거한 검색어를 반영합니다. */
+      function applyKeyword() {
+        updateFilterUrl('keyword', searchTerm.trim());
+        setKeyword(searchTerm.trim());
+      }
+
+      const timer = window.setTimeout(applyKeyword, 300);
+
+      /** 검색어가 다시 바뀌거나 컴포넌트가 종료되면 타이머를 취소합니다. */
+      function clearKeywordTimer() {
+        window.clearTimeout(timer);
+      }
+
+      return clearKeywordTimer;
+    },
+    [searchTerm, keyword],
+  );
+
+  const isSearchSettling = searchTerm.trim() !== keyword;
+
+  /** 현재 검색어와 필터 조건으로 사용자 목록을 조회합니다.
+   * @param context TanStack Query가 전달한 요청 취소 신호
+   * @returns 현재 조건에 맞는 사용자 목록
+   */
+  function queryUsers({ signal }: { signal: AbortSignal }) {
+    return fetchUsers(keyword, luckyDrawFilter, completionFilter, signal);
+  }
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ['users', keyword, luckyDrawFilter, completionFilter],
+    queryFn: queryUsers,
+    initialData:
+      keyword === (initialQuery.keyword ?? '') &&
+      luckyDrawFilter === toStatusFilter(initialQuery.luckyDrawEntered) &&
+      completionFilter === toStatusFilter(initialQuery.completed)
+        ? users
+        : undefined,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const filteredUsers = isSearchSettling ? [] : (data ?? []).toSorted(compareUsersByName);
 
   const pageCount = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
   const pageStartIndex = (currentPage - 1) * USERS_PER_PAGE;
@@ -88,6 +156,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
    * @param value 변경된 응모 여부 필터
    */
   function handleLuckyDrawFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('luckyDrawEntered', value === 'all' ? '' : String(value === 'yes'));
     setLuckyDrawFilter(value);
     setCurrentPage(1);
   }
@@ -96,6 +165,7 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
    * @param value 변경된 수료 여부 필터
    */
   function handleCompletionFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('completed', value === 'all' ? '' : String(value === 'yes'));
     setCompletionFilter(value);
     setCurrentPage(1);
   }
@@ -186,10 +256,20 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
             type="button"
             variant="secondary"
             size="sm"
-            disabled={!hasStatusFilter || filteredUsers.length === 0}
+            disabled={
+              !hasActiveCondition ||
+              isSearchSettling ||
+              isPending ||
+              Boolean(error) ||
+              filteredUsers.length === 0
+            }
             onClick={handleDownloadUsers}
             className={`h-12 w-40 rounded-[4px] px-6 text-body-sb-16 text-static-white enabled:cursor-pointer ${
-              hasStatusFilter && filteredUsers.length > 0
+              hasActiveCondition &&
+              !isSearchSettling &&
+              !isPending &&
+              !error &&
+              filteredUsers.length > 0
                 ? 'bg-gray-700 hover:bg-gray-700 active:bg-gray-700'
                 : 'disabled:bg-gray-300 disabled:text-static-white'
             }`}
@@ -206,10 +286,20 @@ export function UserListClient({ users, onViewDetails }: UserListClientProps) {
       </div>
 
       <div className="mb-7 overflow-x-auto">
-        <UserTable users={paginatedUsers} onViewDetails={onViewDetails} />
+        {isSearchSettling || isPending ? (
+          <p role="status" className="text-body-r-16 text-gray-300">
+            사용자 목록을 불러오는 중입니다...
+          </p>
+        ) : error ? (
+          <p role="alert" className="text-body-r-16 text-red-400">
+            {error.message}
+          </p>
+        ) : (
+          <UserTable users={paginatedUsers} onViewDetails={onViewDetails} />
+        )}
       </div>
 
-      {filteredUsers.length > 0 && pageCount > 1 ? (
+      {!isSearchSettling && !isPending && !error && filteredUsers.length > 0 && pageCount > 1 ? (
         <Pagination
           pageCount={pageCount}
           page={currentPage}
