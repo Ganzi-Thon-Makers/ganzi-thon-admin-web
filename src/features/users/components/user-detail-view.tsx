@@ -58,7 +58,7 @@ export function UserDetailView({ user, role }: UserDetailViewProps) {
           <div className="mb-7 flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">
               <Link
-                href="/admin/users"
+                href="/users"
                 aria-label="전체 사용자 목록으로 돌아가기"
                 className="flex size-12 items-center justify-center rounded-md text-gray-300 transition-colors hover:bg-gray-800 hover:text-white focus-visible:outline-2 focus-visible:outline-ring"
               >
