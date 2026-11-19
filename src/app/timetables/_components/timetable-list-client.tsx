@@ -1,7 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { io } from 'next/cache';
 import Link from 'next/link';
+import { use } from 'react';
 
 import { Button } from '@/components/ui/button';
 
@@ -69,6 +71,7 @@ export function TimetableListClient({
   initialTimetables,
   initialErrorMessage,
 }: TimetableListClientProps) {
+  use(io());
   const { data, error, isFetching, refetch } = useQuery({
     queryKey: ['timetables'],
     queryFn: queryTimetables,

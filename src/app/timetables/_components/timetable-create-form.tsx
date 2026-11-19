@@ -1,8 +1,9 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { io } from 'next/cache';
 import { useRouter } from 'next/navigation';
-import { type ChangeEvent, type FormEvent, useId, useRef, useState } from 'react';
+import { type ChangeEvent, type FormEvent, use, useId, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -162,6 +163,7 @@ function overlapsTimetables(
  * @param props 중복 검사에 사용할 초기 일정 목록
  */
 export function TimetableCreateForm({ initialTimetables }: TimetableCreateFormProps) {
+  if (initialTimetables !== undefined) use(io());
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: timetables } = useQuery({
