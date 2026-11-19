@@ -127,3 +127,157 @@ export async function getTimetableList(): Promise<ApiResult<TimetableItem[]>> {
     };
   return requestTimetableList(accessToken);
 }
+
+/** 타임테이블 행사 기준 일자 */
+export const TIMETABLE_EVENT_DATE = '2026-11-21';
+
+/** 타임테이블 일정 등록 요청 본문 */
+export interface CreateTimetableRequest {
+  /** 시작 일시 (HH:mm / ISO 일시) */
+  startTime: string;
+  /** 종료 일시 (HH:mm / ISO 일시) */
+  endTime: string;
+  /** 일정 제목 */
+  title: string;
+  /** 일정 상세 내용 */
+  description: string;
+  /** 현장 투표 진행 여부 */
+  isVote?: boolean;
+}
+
+/**
+ * 유효한 ISO 일시인지 확인한다.
+ * @param value 검사할 값
+ * @returns ISO 일시 여부
+ */
+export function isIsoDateTimeString(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) &&
+    Number.isFinite(Date.parse(value))
+  );
+}
+
+/**
+ * 입력 시각을 행사일의 한국 현지 일시로 정규화한다.
+ * @param value 시각 또는 ISO 일시
+ * @returns 정규화된 행사 일시 또는 날짜 / 형식 불일치 시 null
+ */
+export function normalizeTimetableDateTime(value: string): string | null {
+  if (/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)) {
+    return `${TIMETABLE_EVENT_DATE}T${value.slice(0, 5)}:00`;
+  }
+  if (
+    !/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(
+      value,
+    ) ||
+    !isIsoDateTimeString(value)
+  )
+    return null;
+  let date = value.slice(0, 10);
+  let time = value.slice(11, 16);
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(value)) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(value));
+    const fields: Record<string, string> = {};
+    for (const part of parts) fields[part.type] = part.value;
+    date = `${fields.year}-${fields.month}-${fields.day}`;
+    time = `${fields.hour}:${fields.minute}`;
+  }
+  return date === TIMETABLE_EVENT_DATE ? `${TIMETABLE_EVENT_DATE}T${time}:00` : null;
+}
+
+/**
+ * 등록 요청을 검증하고 문자열을 정규화한다.
+ * @param payload 등록 요청 본문
+ * @returns 정규화된 입력 또는 검증 오류
+ */
+export function validateCreateTimetableInput(payload: unknown): ApiResult<CreateTimetableRequest> {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload))
+    return invalidCreateInput('요청 본문 형식이 올바르지 않습니다.');
+  const value = payload as Record<string, unknown>;
+  if (typeof value.title !== 'string' || !value.title.trim())
+    return invalidCreateInput('일정 제목을 입력해주세요.');
+  if (value.title.trim().length > 100)
+    return invalidCreateInput('일정 제목은 100자 이하로 입력해주세요.');
+  if (typeof value.description !== 'string' || !value.description.trim())
+    return invalidCreateInput('상세 내용을 입력해주세요.');
+  if (value.isVote !== undefined && typeof value.isVote !== 'boolean')
+    return invalidCreateInput('투표 여부 형식이 올바르지 않습니다.');
+  if (!isValidTimeString(value.startTime) || !isValidTimeString(value.endTime))
+    return invalidCreateInput('시작 시간과 종료 시간을 선택해주세요.');
+  const startTime = normalizeTimetableDateTime(value.startTime);
+  const endTime = normalizeTimetableDateTime(value.endTime);
+  if (!startTime || !endTime)
+    return invalidCreateInput('일정은 행사일 2026-11-21의 한국 시각으로 입력해주세요.');
+  if (endTime <= startTime) return invalidCreateInput('종료 시간은 시작 시간보다 늦어야 합니다.');
+  return {
+    ok: true,
+    data: {
+      startTime,
+      endTime,
+      title: value.title.trim(),
+      description: value.description.trim(),
+      ...(typeof value.isVote === 'boolean' ? { isVote: value.isVote } : {}),
+    },
+  };
+}
+
+/**
+ * 등록 입력 오류를 생성한다.
+ * @param message 오류 안내
+ * @returns 입력 오류 결과
+ */
+function invalidCreateInput(message: string): ApiResult<never> {
+  return { ok: false, status: 400, code: 'INVALID_INPUT', message };
+}
+
+/**
+ * 인증 토큰으로 일정을 등록한다.
+ * @param accessToken 액세스 토큰
+ * @param body 검증된 등록 입력
+ * @returns 등록 결과 또는 API 오류
+ */
+export function requestCreateTimetable(
+  accessToken: string,
+  body: CreateTimetableRequest,
+): Promise<ApiResult<null>> {
+  return requestServerApi<null>('/backoffice/api/v1/timetables', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body,
+  });
+}
+
+/**
+ * 슈퍼 관리자 권한과 입력을 확인하고 일정을 등록한다.
+ * @param payload 등록 요청 본문
+ * @returns 등록 결과 또는 인증 / 입력 오류
+ */
+export async function createTimetable(payload: unknown): Promise<ApiResult<null>> {
+  const { accessToken, role } = await getServerAuthTokens();
+  if (!accessToken)
+    return {
+      ok: false,
+      status: 401,
+      code: 'UNAUTHORIZED',
+      message: '로그인이 필요합니다. 다시 로그인해주세요.',
+    };
+  if (role !== 'SUPER_ADMIN')
+    return {
+      ok: false,
+      status: 403,
+      code: 'FORBIDDEN',
+      message: '타임테이블 관리 권한이 없습니다.',
+    };
+  const validated = validateCreateTimetableInput(payload);
+  if (!validated.ok) return validated;
+  return requestCreateTimetable(accessToken, validated.data);
+}
