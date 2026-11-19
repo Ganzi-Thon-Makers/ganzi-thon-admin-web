@@ -1,7 +1,10 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { type ChangeEvent, type FormEvent, useId, useState } from 'react';
+import { type ChangeEvent, useId, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 
 import {
   Accordion,
@@ -37,9 +40,9 @@ interface FormDropdownProps {
 }
 
 const roleOptions = [
-  { value: 'PARTICIPANT', label: '참여자' },
-  { value: 'TEAM', label: '팀' },
+  { value: 'PARTICIPANT', label: '사용자' },
   { value: 'ADMIN', label: '어드민' },
+  { value: 'TEAM', label: '팀' },
 ];
 /** 목록 데이터에 사용 중인 팀 번호를 드롭다운 항목으로 만듭니다.
  * @param _value Array.from이 전달하는 사용하지 않는 값
@@ -84,6 +87,14 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
     return option.value === value;
   }
 
+  /** 역할 목록에서는 현재 선택한 역할을 숨깁니다.
+   * @param option 표시 여부를 검사할 항목
+   * @returns 역할 목록에서 선택 가능한 항목이면 true
+   */
+  function isVisibleOption(option: DropdownOption) {
+    return name !== 'role' || option.value !== value;
+  }
+
   /** 선택 항목의 라디오 행을 그립니다.
    * @param option 표시할 드롭다운 항목
    * @returns 키보드로도 선택할 수 있는 라디오 행
@@ -110,9 +121,11 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
 
   return (
     <div className={`min-w-0 ${open ? 'relative z-30' : 'relative z-10'}`}>
-      <span id={`${id}-label`} className="mb-[10px] block text-body-r-14 text-gray-200">
-        {label}
-      </span>
+      {label && (
+        <span id={`${id}-label`} className="mb-[10px] block text-body-r-14 text-gray-200">
+          {label}
+        </span>
+      )}
       <Accordion
         value={open ? [itemId] : []}
         onValueChange={handleOpenChange}
@@ -120,9 +133,10 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
       >
         <AccordionItem value={itemId} className="border-0 bg-transparent">
           <AccordionTrigger
-            aria-labelledby={`${id}-label`}
+            aria-labelledby={label ? `${id}-label` : undefined}
+            aria-label={label ? undefined : placeholder}
             triggerState="entered"
-            className={`h-12 cursor-pointer rounded-[4px] bg-gray-900 px-4 py-0 ${value ? 'text-gray-50' : 'text-gray-500'}`}
+            className={`h-12 cursor-pointer rounded-[4px] px-4 py-0 ${name === 'role' ? `bg-gray-800 ${open ? 'text-gray-500' : 'text-static-white'}` : value ? 'bg-gray-900 text-gray-50' : 'bg-gray-900 text-gray-500'}`}
           >
             {options.find(isSelectedOption)?.label ?? placeholder}
           </AccordionTrigger>
@@ -130,7 +144,7 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
             className="absolute top-full left-0 z-50 h-auto max-h-60 w-full [scrollbar-width:none] overflow-y-auto [&::-webkit-scrollbar]:hidden"
             contentClassName="gap-0 rounded-md bg-gray-900 px-4 py-2"
           >
-            {options.map(renderOption)}
+            {options.filter(isVisibleOption).map(renderOption)}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -140,56 +154,76 @@ function FormDropdown({ name, label, placeholder, value, options, onChange }: Fo
 
 const phonePattern = /^01[016789]-?\d{3,4}-?\d{4}$/;
 
-export function UserCreateForm() {
-  const [role, setRole] = useState<RegistrationRole | ''>('');
-  const [values, setValues] = useState<
-    Record<RegistrationField, string> & {
-      hasEnteredLuckyDraw: boolean;
-      hasCompletedCourse: boolean;
-    }
-  >({
-    name: '',
-    school: '',
-    phoneNumber: '',
-    teamNumber: '',
-    accountId: '',
-    password: '',
-    part: '',
-    hasEnteredLuckyDraw: false,
-    hasCompletedCourse: false,
-  });
-  const [phoneTouched, setPhoneTouched] = useState(false);
-  const isPhoneValid = phonePattern.test(values.phoneNumber.trim());
-  /** 현재 역할의 필수 필드가 채워졌고 형식도 유효한지 확인합니다.
-   * @param field 검사할 필드
-   * @returns 입력값이 유효하면 true
-   */
-  function isRequiredFieldValid(field: RegistrationField) {
-    return values[field].trim().length > 0 && (field !== 'phoneNumber' || isPhoneValid);
+const registrationBaseSchema = z.object({
+  role: z.union([z.enum(['PARTICIPANT', 'TEAM', 'ADMIN']), z.literal('')]),
+  name: z.string(),
+  school: z.string(),
+  phoneNumber: z.string(),
+  teamNumber: z.string(),
+  accountId: z.string(),
+  password: z.string(),
+  part: z.string(),
+  hasEnteredLuckyDraw: z.boolean(),
+  hasCompletedCourse: z.boolean(),
+});
+type RegistrationValues = z.infer<typeof registrationBaseSchema>;
+
+/** 현재 역할에 필요한 필드만 검사합니다.
+ * @param values 폼에 유지 중인 전체 입력값
+ * @param context 필드별 오류를 기록할 Zod 검증 문맥
+ */
+function validateRegistration(values: RegistrationValues, context: z.RefinementCtx) {
+  if (!values.role) {
+    context.addIssue({ code: 'custom', path: ['role'], message: '역할을 선택해 주세요.' });
+    return;
   }
+  for (const field of requiredFields[values.role]) {
+    if (!values[field].trim()) {
+      context.addIssue({ code: 'custom', path: [field], message: '필수 입력 항목입니다.' });
+    } else if (field === 'phoneNumber' && !phonePattern.test(values.phoneNumber.trim())) {
+      context.addIssue({
+        code: 'custom',
+        path: [field],
+        message: '전화번호 형식을 확인해 주세요.',
+      });
+    }
+  }
+}
 
-  const isFormValid =
-    Boolean(role) && requiredFields[role as RegistrationRole].every(isRequiredFieldValid);
+const registrationSchema = registrationBaseSchema.superRefine(validateRegistration);
 
-  /** 선택한 계정 역할로 표시할 폼을 전환하고 불필요해진 필드를 지웁니다.
+export function UserCreateForm() {
+  const {
+    register,
+    control,
+    setValue,
+    formState,
+    handleSubmit: handleFormSubmit,
+  } = useForm<RegistrationValues>({
+    resolver: zodResolver(registrationSchema),
+    mode: 'onChange',
+    shouldUnregister: false,
+    defaultValues: {
+      role: 'PARTICIPANT',
+      name: '',
+      school: '',
+      phoneNumber: '',
+      teamNumber: '',
+      accountId: '',
+      password: '',
+      part: '',
+      hasEnteredLuckyDraw: false,
+      hasCompletedCourse: false,
+    },
+  });
+  const values = useWatch({ control });
+  const role = values.role ?? '';
+
+  /** 선택한 계정 역할로 표시할 폼을 전환합니다. 숨겨진 필드의 값은 유지합니다.
    * @param value 새로 선택한 역할
    */
   function handleRoleChange(value: string) {
-    const nextRole = value as RegistrationRole;
-    setRole(nextRole);
-    /** 새 역할에서 사용하지 않는 입력값을 제거합니다.
-     * @param current 변경 전 폼 값
-     * @returns 새 역할에 필요한 값만 유지한 폼 값
-     */
-    function clearHiddenFields(current: typeof values) {
-      const next = { ...current };
-      for (const field of Object.keys(next) as RegistrationField[]) {
-        if (requiredFields.PARTICIPANT.includes(field) && !requiredFields[nextRole].includes(field))
-          next[field] = '';
-      }
-      return next;
-    }
-    setValues(clearHiddenFields);
+    setValue('role', value as RegistrationRole, { shouldValidate: true, shouldDirty: true });
   }
 
   /** 선택한 항목을 폼 상태에 반영합니다.
@@ -197,14 +231,7 @@ export function UserCreateForm() {
    * @param value 선택한 값
    */
   function handleSelectionChange(field: 'teamNumber' | 'part', value: string) {
-    /** 선택값을 기존 폼 값에 합칩니다.
-     * @param current 변경 전 폼 값
-     * @returns 선택값이 반영된 폼 값
-     */
-    function updateSelection(current: typeof values) {
-      return { ...current, [field]: value };
-    }
-    setValues(updateSelection);
+    setValue(field, value, { shouldValidate: true, shouldDirty: true });
   }
 
   /** 팀번호 드롭다운의 선택값을 반영합니다.
@@ -221,32 +248,9 @@ export function UserCreateForm() {
     handleSelectionChange('part', value);
   }
 
-  /** 입력 필드의 값을 갱신합니다.
-   * @param event 변경된 입력 필드의 이벤트
-   */
-  function handleFieldChange(event: ChangeEvent<HTMLInputElement>) {
-    const field = event.target.name as RegistrationField;
-    const value = event.target.value;
-    /** 변경된 입력값을 기존 폼 값에 합칩니다.
-     * @param current 변경 전 폼 값
-     * @returns 입력값이 반영된 폼 값
-     */
-    function updateField(current: typeof values) {
-      return { ...current, [field]: value };
-    }
-    setValues(updateField);
-  }
-
-  /** 전화번호 입력을 마치면 형식 오류를 표시합니다. */
-  function handlePhoneBlur() {
-    setPhoneTouched(true);
-  }
-
-  /** API 연동 전에는 폼의 기본 제출 동작을 막습니다.
-   * @param event 제출 이벤트
-   */
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  /** API 명세가 정해질 때까지 유효한 제출을 저장하지 않습니다. */
+  function handleSubmit() {
+    // 등록 API가 연결되기 전에는 저장하지 않습니다.
   }
 
   const fieldClass = 'w-full gap-[10px]';
@@ -275,7 +279,17 @@ export function UserCreateForm() {
             </Link>
             <h1 className="text-display-sb-32">사용자 등록</h1>
           </div>
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleFormSubmit(handleSubmit)} noValidate>
+            <div className="mb-7 w-80 max-w-full">
+              <FormDropdown
+                name="role"
+                label=""
+                placeholder="역할을 선택하세요"
+                value={role}
+                options={roleOptions}
+                onChange={handleRoleChange}
+              />
+            </div>
             <section
               aria-labelledby="basic-information-heading"
               className="rounded-[12px] bg-gray-800 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] xl:p-8"
@@ -287,37 +301,30 @@ export function UserCreateForm() {
                 {role !== '' && role !== 'TEAM' && (
                   <>
                     <TextField
-                      name="name"
+                      {...register('name')}
                       label="이름"
                       placeholder="이름을 입력하세요"
-                      value={values.name}
-                      onChange={handleFieldChange}
                       required
                       containerClassName={fieldClass}
                       inputWrapperClassName={inputClass}
                     />
                     <TextField
-                      name="school"
+                      {...register('school')}
                       label="학교"
                       placeholder="학교를 입력하세요"
-                      value={values.school}
-                      onChange={handleFieldChange}
                       required
                       containerClassName={fieldClass}
                       inputWrapperClassName={inputClass}
                     />
                     <TextField
-                      name="phoneNumber"
+                      {...register('phoneNumber')}
                       label="전화번호"
                       type="tel"
                       inputMode="tel"
                       placeholder="010-0000-0000"
-                      value={values.phoneNumber}
-                      onChange={handleFieldChange}
-                      onBlur={handlePhoneBlur}
                       errorMessage={
-                        phoneTouched && values.phoneNumber && !isPhoneValid
-                          ? '전화번호 형식을 확인해 주세요.'
+                        formState.touchedFields.phoneNumber && values.phoneNumber
+                          ? formState.errors.phoneNumber?.message
                           : undefined
                       }
                       required
@@ -329,7 +336,7 @@ export function UserCreateForm() {
                         name="teamNumber"
                         label="팀번호"
                         placeholder="팀을 선택하세요"
-                        value={values.teamNumber}
+                        value={values.teamNumber ?? ''}
                         options={teamOptions}
                         onChange={handleTeamChange}
                       />
@@ -338,11 +345,9 @@ export function UserCreateForm() {
                 )}
                 {role !== '' && (
                   <TextField
-                    name="accountId"
+                    {...register('accountId')}
                     label="아이디"
                     placeholder="아이디를 입력하세요"
-                    value={values.accountId}
-                    onChange={handleFieldChange}
                     required
                     containerClassName={fieldClass}
                     inputWrapperClassName={inputClass}
@@ -350,13 +355,11 @@ export function UserCreateForm() {
                 )}
                 {role !== '' && (
                   <TextField
-                    name="password"
+                    {...register('password')}
                     label="비밀번호"
                     type="password"
                     autoComplete="new-password"
                     placeholder="비밀번호를 입력하세요"
-                    value={values.password}
-                    onChange={handleFieldChange}
                     required
                     containerClassName={fieldClass}
                     inputWrapperClassName={inputClass}
@@ -367,7 +370,7 @@ export function UserCreateForm() {
                     name="teamNumber"
                     label="팀번호"
                     placeholder="팀을 선택하세요"
-                    value={values.teamNumber}
+                    value={values.teamNumber ?? ''}
                     options={teamOptions}
                     onChange={handleTeamChange}
                   />
@@ -377,19 +380,11 @@ export function UserCreateForm() {
                     name="part"
                     label="파트"
                     placeholder="파트를 선택하세요"
-                    value={values.part}
+                    value={values.part ?? ''}
                     options={partOptions}
                     onChange={handlePartChange}
                   />
                 )}
-                <FormDropdown
-                  name="role"
-                  label="역할"
-                  placeholder="역할을 선택하세요"
-                  value={role}
-                  options={roleOptions}
-                  onChange={handleRoleChange}
-                />
               </div>
             </section>
             <div className="mt-7 flex flex-col items-end gap-3">
@@ -397,7 +392,7 @@ export function UserCreateForm() {
                 type="submit"
                 variant="primary"
                 size="small"
-                disabled={!isFormValid}
+                disabled={!formState.isValid}
                 className="h-12 w-[140px] max-w-[140px] self-end px-3 text-body-sb-16 disabled:bg-red-300"
               >
                 사용자 등록하기
