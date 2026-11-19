@@ -22,14 +22,18 @@ import { type DropdownOption, FormDropdown } from './user-create-form';
  * @returns 팀 번호와 화면에 표시할 이름
  */
 function createTeamOption(_value: unknown, index: number): DropdownOption {
-  return { value: String(index + 1).padStart(2, '0'), label: `${index + 1}팀` };
+  const teamNumber = String(index + 1).padStart(2, '0');
+  return { value: teamNumber, label: `${teamNumber}팀` };
 }
 
-const teamOptions: DropdownOption[] = Array.from({ length: 8 }, createTeamOption);
+const teamOptions: DropdownOption[] = Array.from({ length: 30 }, createTeamOption);
 
 const partOptions: DropdownOption[] = [
   { value: 'PLAN', label: '기획' },
   { value: 'DESIGN', label: '디자인' },
+  { value: 'WEB', label: '웹' },
+  { value: 'APP', label: '앱' },
+  { value: 'SERVER', label: '서버' },
 ];
 
 interface UserEditFormProps {
@@ -88,7 +92,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
   const selectedPart = values.part ?? '';
   const availableTeamOptions = teamOptions.some(isCurrentTeamOption)
     ? teamOptions
-    : [{ value: user.teamNumber, label: `${user.teamNumber}팀` }, ...teamOptions];
+    : [{ value: user.teamNumber, label: `${user.teamNumber.padStart(2, '0')}팀` }, ...teamOptions];
   const availablePartOptions = partOptions.some(isCurrentPartOption)
     ? partOptions
     : [{ value: user.part, label: user.part }, ...partOptions];
@@ -208,6 +212,8 @@ export function UserEditForm({ user }: UserEditFormProps) {
                   value={selectedTeam}
                   options={availableTeamOptions}
                   onChange={handleTeamChange}
+                  adaptivePosition
+                  visibleOptionCount={5}
                 />
                 <TextField
                   {...register('accountId')}
@@ -232,6 +238,8 @@ export function UserEditForm({ user }: UserEditFormProps) {
                   value={selectedPart}
                   options={availablePartOptions}
                   onChange={handlePartChange}
+                  adaptivePosition
+                  visibleOptionCount={3}
                 />
               </div>
             </section>

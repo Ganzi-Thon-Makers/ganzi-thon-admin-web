@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { type ChangeEvent, useId, useState } from 'react';
+import { type ChangeEvent, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -38,6 +38,8 @@ interface FormDropdownProps {
   value: string;
   options: DropdownOption[];
   onChange: (value: string) => void;
+  adaptivePosition?: boolean;
+  visibleOptionCount?: number;
 }
 
 const roleOptions = [
@@ -67,10 +69,39 @@ export function FormDropdown({
   value,
   options,
   onChange,
+  adaptivePosition = false,
+  visibleOptionCount,
 }: FormDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [menuMaxHeight, setMenuMaxHeight] = useState(240);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const id = useId();
   const itemId = `${id}-options`;
+
+  useLayoutEffect(() => {
+    if (!adaptivePosition || !open) return;
+
+    /** 입력칸 아래의 화면 공간과 항목 수에 맞춰 메뉴 높이를 제한합니다. */
+    function updateMenuHeight() {
+      const bounds = triggerRef.current
+        ?.querySelector('[data-slot="accordion-trigger"]')
+        ?.getBoundingClientRect();
+      if (!bounds) return;
+
+      const spaceBelow = window.innerHeight - bounds.bottom - 8;
+      const desiredHeight =
+        Math.min(options.length, visibleOptionCount ?? options.length) * 48 + 16;
+      setMenuMaxHeight(Math.min(desiredHeight, Math.max(96, spaceBelow)));
+    }
+
+    updateMenuHeight();
+    window.addEventListener('resize', updateMenuHeight);
+    window.addEventListener('scroll', updateMenuHeight, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuHeight);
+      window.removeEventListener('scroll', updateMenuHeight, true);
+    };
+  }, [adaptivePosition, open, options.length, visibleOptionCount]);
 
   /** 드롭다운의 펼침 상태를 Accordion 값에 맞춥니다.
    * @param items 현재 펼쳐진 항목 식별자
@@ -128,7 +159,7 @@ export function FormDropdown({
   }
 
   return (
-    <div className={`min-w-0 ${open ? 'relative z-30' : 'relative z-10'}`}>
+    <div ref={triggerRef} className={`min-w-0 ${open ? 'relative z-30' : 'relative z-10'}`}>
       {label && (
         <span id={`${id}-label`} className="mb-[10px] block text-body-r-14 text-gray-200">
           {label}
@@ -149,7 +180,8 @@ export function FormDropdown({
             {options.find(isSelectedOption)?.label ?? placeholder}
           </AccordionTrigger>
           <AccordionContent
-            className="absolute top-full left-0 z-50 h-auto max-h-60 w-full [scrollbar-width:none] overflow-y-auto [&::-webkit-scrollbar]:hidden"
+            className={`${adaptivePosition ? 'relative overscroll-contain' : 'absolute top-full left-0 max-h-60'} z-50 h-auto w-full [scrollbar-width:none] overflow-y-auto [&::-webkit-scrollbar]:hidden`}
+            style={adaptivePosition ? { maxHeight: menuMaxHeight } : undefined}
             contentClassName="gap-0 rounded-md bg-gray-900 px-4 py-2"
           >
             {options.filter(isVisibleOption).map(renderOption)}
