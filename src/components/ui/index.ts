@@ -41,6 +41,8 @@ export type {
 export { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from './input-group';
 export type { LabelProps } from './label';
 export { Label } from './label';
+export type { ModalProps } from './modal';
+export { Modal } from './modal';
 export type { PaginationProps } from './pagination';
 export { Pagination } from './pagination';
 export type { SidebarClientProps, SidebarNavItem, SidebarVariant } from './sidebar-client';

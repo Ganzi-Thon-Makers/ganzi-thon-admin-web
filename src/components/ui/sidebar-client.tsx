@@ -145,6 +145,7 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
     id: 'timetable',
     label: '타임테이블 관리',
     icon: 'cock',
+    href: '/timetables',
   },
   {
     id: 'booths',
