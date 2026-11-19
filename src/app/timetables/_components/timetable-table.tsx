@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+
 import type { TimetableItem } from '../_data/timetable-api';
 
 export interface TimetableTableProps {
@@ -78,25 +80,29 @@ function TimetableRow({ item, deletingIds, onDelete }: TimetableRowProps) {
         {item.description}
       </td>
       <td className="px-6">
-        <div className="flex justify-end gap-3">
-          <button
+        <div className="flex justify-end gap-1">
+          <Button
             type="button"
+            variant="secondary"
+            size="xs"
             disabled
-            className="h-6 w-19 cursor-pointer rounded-[4px] bg-gray-700 text-caption-sb-12 text-static-white transition-colors hover:bg-gray-600 focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-gray-700"
+            className="h-6 w-[98px] px-0 py-0 text-caption-sb-12 disabled:opacity-60"
             aria-label={`${item.title} 수정`}
           >
             수정
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
+            size="xs"
             disabled={!onDelete || isDeleting}
             aria-busy={isDeleting}
-            className="h-6 w-19 cursor-pointer rounded-[4px] bg-gray-700 text-caption-sb-12 text-static-white transition-colors hover:bg-gray-600 focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-gray-700"
+            className="h-6 w-[98px] px-0 py-0 text-caption-sb-12 disabled:opacity-60"
             aria-label={`${item.title} 삭제`}
             onClick={handleDeleteClick}
           >
             {isDeleting ? '삭제 중...' : '삭제'}
-          </button>
+          </Button>
         </div>
       </td>
     </tr>
