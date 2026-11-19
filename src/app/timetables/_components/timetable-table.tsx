@@ -1,8 +1,23 @@
+'use client';
+
 import type { TimetableItem } from '../_data/timetable-api';
 
 export interface TimetableTableProps {
   /** 시간 순서로 정렬된 일정 목록 */
   timetables: TimetableItem[];
+  /** 삭제 중인 일정 식별자 목록 */
+  deletingIds?: readonly number[];
+  /** 일정 삭제 요청 핸들러 */
+  onDelete?: (item: TimetableItem) => void;
+}
+
+interface TimetableRowProps {
+  /** 표시할 일정 */
+  item: TimetableItem;
+  /** 삭제 중인 일정 식별자 목록 */
+  deletingIds?: readonly number[];
+  /** 일정 삭제 요청 핸들러 */
+  onDelete?: (item: TimetableItem) => void;
 }
 
 /**
@@ -34,11 +49,19 @@ export function formatTimetableTimeRange(startTime: string, endTime: string): st
 }
 
 /**
- * 일정 한 행을 렌더링한다.
- * @param item 표시할 일정
- * @returns 일정 테이블 행
+ * 일정 한 행을 렌더링하고 삭제 동작을 제공하는 컴포넌트입니다.
+ * @param props 행 데이터와 삭제 상태 / 핸들러
  */
-function renderTimetableRow(item: TimetableItem) {
+function TimetableRow({ item, deletingIds, onDelete }: TimetableRowProps) {
+  const isDeleting = deletingIds?.includes(item.id) ?? false;
+
+  /**
+   * 삭제 버튼 클릭 이벤트를 상위 목록 핸들러에 전달한다.
+   */
+  function handleDeleteClick() {
+    onDelete?.(item);
+  }
+
   return (
     <tr key={item.id} className="h-[72px] bg-gray-800">
       <td className="px-6 text-body-sb-16 text-gray-50">
@@ -66,11 +89,13 @@ function renderTimetableRow(item: TimetableItem) {
           </button>
           <button
             type="button"
-            disabled
+            disabled={!onDelete || isDeleting}
+            aria-busy={isDeleting}
             className="h-6 w-19 cursor-pointer rounded-[4px] bg-gray-700 text-caption-sb-12 text-static-white transition-colors hover:bg-gray-600 focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-gray-700"
             aria-label={`${item.title} 삭제`}
+            onClick={handleDeleteClick}
           >
-            삭제
+            {isDeleting ? '삭제 중...' : '삭제'}
           </button>
         </div>
       </td>
@@ -78,7 +103,20 @@ function renderTimetableRow(item: TimetableItem) {
   );
 }
 
-export function TimetableTable({ timetables }: TimetableTableProps) {
+/**
+ * 타임테이블 일정 목록을 표 형태로 표시하는 컴포넌트입니다.
+ * @param props 정렬된 일정 목록 / 삭제 상태 / 삭제 핸들러
+ */
+export function TimetableTable({ timetables, deletingIds, onDelete }: TimetableTableProps) {
+  /**
+   * 일정 정보를 바탕으로 테이블 행 요소를 렌더링한다.
+   * @param item 표시할 일정
+   * @returns 일정 테이블 행 요소
+   */
+  function renderTimetableRow(item: TimetableItem) {
+    return <TimetableRow key={item.id} item={item} deletingIds={deletingIds} onDelete={onDelete} />;
+  }
+
   return (
     <table className="w-full min-w-[960px] table-fixed text-left" aria-label="타임테이블 일정 목록">
       <colgroup>
