@@ -1,4 +1,5 @@
 import { requestServerApi } from '@/lib/api/server-client';
+import type { ApiErrorCode } from '@/lib/api/types';
 
 import type { EditValues } from '../validation/user-edit';
 
@@ -36,10 +37,22 @@ export function toUpdateUserRequest(values: EditValues): UpdateUserRequest {
  * @returns 수정 성공 여부와 실패 시 오류 정보
  */
 export function updateUser(userId: string, accessToken: string, values: EditValues) {
-  return requestServerApi<null>(`/backoffice/api/v1/users/${encodeURIComponent(userId)}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: toUpdateUserRequest(values),
-    responseType: 'empty',
-  });
+  return requestServerApi<null, ApiErrorCode | 'TEAM_NUMBER_MANAGED_BY_PROJECT'>(
+    `/backoffice/api/v1/users/${encodeURIComponent(userId)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: toUpdateUserRequest(values),
+      responseType: 'empty',
+      resolveErrorCode: (status, rawCode) => {
+        if (status === 400 && rawCode === 'TEAM_NUMBER_MANAGED_BY_PROJECT') return rawCode;
+        if (rawCode === 'INVALID_INPUT' || rawCode === 'UNAUTHORIZED' || rawCode === 'FORBIDDEN')
+          return rawCode;
+        if (status === 400) return 'INVALID_INPUT';
+        if (status === 401) return 'UNAUTHORIZED';
+        if (status === 403) return 'FORBIDDEN';
+        return 'UNKNOWN_ERROR';
+      },
+    },
+  );
 }
