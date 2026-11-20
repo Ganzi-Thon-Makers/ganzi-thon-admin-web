@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { AdminHeader } from '@/components/layout/admin-header';
+import { AdminHeaderContent } from '@/components/layout/admin-header';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -109,7 +109,7 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
         className="sticky top-0 h-screen min-h-0 self-start"
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AdminHeader loginId={loginId} />
+        <AdminHeaderContent loginId={loginId} />
         <main className="flex-1 px-6 pt-10 pb-10 sm:px-10 xl:px-16 xl:pt-[70px]">
           <div className="mb-7 flex items-center gap-4">
             <Link
