@@ -119,6 +119,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     id: 'booths',
     label: '부스 관리',
     icon: 'house',
+    href: '/booths',
   },
 ];
 
@@ -153,6 +154,7 @@ const SUPERADMIN_NAV_ITEMS: SidebarNavItem[] = [
     id: 'booths',
     label: '부스 관리',
     icon: 'house',
+    href: '/booths',
   },
 ];
 
