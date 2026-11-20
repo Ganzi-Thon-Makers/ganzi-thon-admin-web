@@ -295,7 +295,7 @@ export function ProjectDetailView({ project, role }: ProjectDetailViewProps) {
         onOpenChange={handleDeleteModalOpenChange}
         title="프로젝트를 삭제할까요?"
         description={
-          '프로젝트 정보와 받은 투표, 부스 배정이 함께 초기화됩니다.\n삭제 후 되돌릴 수 없습니다.'
+          '프로젝트 정보와 받은 투표, 부스 배정이 함께 초기화 됩니다.\n삭제 후 되돌릴 수 없습니다.'
         }
         cancelLabel="취소"
         confirmLabel={isDeleting ? '삭제 중...' : '프로젝트 삭제'}
