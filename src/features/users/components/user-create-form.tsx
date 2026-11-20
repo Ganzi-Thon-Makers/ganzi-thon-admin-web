@@ -2,9 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { type ChangeEvent, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ChangeEvent, type FormEvent, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
 
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import {
@@ -19,14 +19,10 @@ import { Icon } from '@/components/ui/icon';
 import type { SidebarVariant } from '@/components/ui/sidebar-client';
 import { TextField } from '@/components/ui/text-field';
 
+import { createUserAction } from '../actions/create-user';
+import { createSchema, type CreateValues } from '../validation/user-create';
+
 type RegistrationRole = 'PARTICIPANT' | 'TEAM' | 'ADMIN';
-type RegistrationField =
-  'name' | 'school' | 'phoneNumber' | 'teamNumber' | 'accountId' | 'password' | 'part';
-const requiredFields: Record<RegistrationRole, RegistrationField[]> = {
-  PARTICIPANT: ['name', 'school', 'phoneNumber', 'teamNumber', 'accountId', 'password', 'part'],
-  ADMIN: ['name', 'school', 'phoneNumber', 'accountId', 'password', 'part'],
-  TEAM: ['accountId', 'password', 'teamNumber'],
-};
 export interface DropdownOption {
   value: string;
   label: string;
@@ -56,10 +52,13 @@ function createTeamOption(_value: unknown, index: number): DropdownOption {
   return { value: String(index + 1).padStart(2, '0'), label: `${index + 1}팀` };
 }
 
-const teamOptions = Array.from({ length: 8 }, createTeamOption);
+const teamOptions = Array.from({ length: 30 }, createTeamOption);
 const partOptions = [
-  { value: '기획', label: '기획' },
-  { value: '디자인', label: '디자인' },
+  { value: 'PLAN', label: '기획' },
+  { value: 'DESIGN', label: '디자인' },
+  { value: 'WEB', label: '웹' },
+  { value: 'APP', label: '앱' },
+  { value: 'SERVER', label: '서버' },
 ];
 
 export function FormDropdown({
@@ -78,30 +77,37 @@ export function FormDropdown({
   const id = useId();
   const itemId = `${id}-options`;
 
-  useLayoutEffect(() => {
-    if (!adaptivePosition || !open) return;
+  /** 열린 드롭다운의 높이를 화면 공간에 맞추고 변경을 감시합니다.
+   * @returns 이벤트 구독을 해제하는 정리 함수 또는 구독이 없을 때 undefined
+   */
+  useLayoutEffect(
+    function manageMenuHeight() {
+      if (!adaptivePosition || !open) return;
 
-    /** 입력칸 아래의 화면 공간과 항목 수에 맞춰 메뉴 높이를 제한합니다. */
-    function updateMenuHeight() {
-      const bounds = triggerRef.current
-        ?.querySelector('[data-slot="accordion-trigger"]')
-        ?.getBoundingClientRect();
-      if (!bounds) return;
+      /** 입력칸 아래의 화면 공간과 항목 수에 맞춰 메뉴 높이를 제한합니다. */
+      function updateMenuHeight() {
+        const bounds = triggerRef.current
+          ?.querySelector('[data-slot="accordion-trigger"]')
+          ?.getBoundingClientRect();
+        if (!bounds) return;
 
-      const spaceBelow = window.innerHeight - bounds.bottom - 8;
-      const desiredHeight =
-        Math.min(options.length, visibleOptionCount ?? options.length) * 48 + 16;
-      setMenuMaxHeight(Math.min(desiredHeight, Math.max(96, spaceBelow)));
-    }
+        const spaceBelow = window.innerHeight - bounds.bottom - 8;
+        const desiredHeight =
+          Math.min(options.length, visibleOptionCount ?? options.length) * 48 + 16;
+        setMenuMaxHeight(Math.min(desiredHeight, Math.max(96, spaceBelow)));
+      }
 
-    updateMenuHeight();
-    window.addEventListener('resize', updateMenuHeight);
-    window.addEventListener('scroll', updateMenuHeight, true);
-    return () => {
-      window.removeEventListener('resize', updateMenuHeight);
-      window.removeEventListener('scroll', updateMenuHeight, true);
-    };
-  }, [adaptivePosition, open, options.length, visibleOptionCount]);
+      updateMenuHeight();
+      window.addEventListener('resize', updateMenuHeight);
+      window.addEventListener('scroll', updateMenuHeight, true);
+      /** 드롭다운 높이 계산에 사용한 이벤트 구독을 해제합니다. */
+      return function cleanupMenuHeightListeners() {
+        window.removeEventListener('resize', updateMenuHeight);
+        window.removeEventListener('scroll', updateMenuHeight, true);
+      };
+    },
+    [adaptivePosition, open, options.length, visibleOptionCount],
+  );
 
   /** 드롭다운의 펼침 상태를 Accordion 값에 맞춥니다.
    * @param items 현재 펼쳐진 항목 식별자
@@ -192,60 +198,26 @@ export function FormDropdown({
   );
 }
 
-export const phonePattern = /^01[016789]-?\d{3,4}-?\d{4}$/;
-
-const registrationBaseSchema = z.object({
-  role: z.union([z.enum(['PARTICIPANT', 'TEAM', 'ADMIN']), z.literal('')]),
-  name: z.string(),
-  school: z.string(),
-  phoneNumber: z.string(),
-  teamNumber: z.string(),
-  accountId: z.string(),
-  password: z.string(),
-  part: z.string(),
-  hasEnteredLuckyDraw: z.boolean(),
-  hasCompletedCourse: z.boolean(),
-});
-type RegistrationValues = z.infer<typeof registrationBaseSchema>;
-
-/** 현재 역할에 필요한 필드만 검사합니다.
- * @param values 폼에 유지 중인 전체 입력값
- * @param context 필드별 오류를 기록할 Zod 검증 문맥
- */
-function validateRegistration(values: RegistrationValues, context: z.RefinementCtx) {
-  if (!values.role) {
-    context.addIssue({ code: 'custom', path: ['role'], message: '역할을 선택해 주세요.' });
-    return;
-  }
-  for (const field of requiredFields[values.role]) {
-    if (!values[field].trim()) {
-      context.addIssue({ code: 'custom', path: [field], message: '필수 입력 항목입니다.' });
-    } else if (field === 'phoneNumber' && !phonePattern.test(values.phoneNumber.trim())) {
-      context.addIssue({
-        code: 'custom',
-        path: [field],
-        message: '전화번호 형식을 확인해 주세요.',
-      });
-    }
-  }
-}
-
-const registrationSchema = registrationBaseSchema.superRefine(validateRegistration);
-
 interface UserCreateFormProps {
   /** 인증 세션 역할에 맞춘 사이드바 변형 */
   sidebarVariant?: SidebarVariant;
 }
 
 export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps) {
+  const router = useRouter();
+  const submittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultMessage, setResultMessage] = useState('');
+  const [resultError, setResultError] = useState(false);
   const {
     register,
     control,
+    reset,
     setValue,
     formState,
     handleSubmit: handleFormSubmit,
-  } = useForm<RegistrationValues>({
-    resolver: zodResolver(registrationSchema),
+  } = useForm<CreateValues>({
+    resolver: zodResolver(createSchema),
     mode: 'onChange',
     shouldUnregister: false,
     defaultValues: {
@@ -257,18 +229,26 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
       accountId: '',
       password: '',
       part: '',
-      hasEnteredLuckyDraw: false,
-      hasCompletedCourse: false,
     },
   });
   const values = useWatch({ control });
   const role = values.role ?? '';
 
-  /** 선택한 계정 역할로 표시할 폼을 전환합니다. 숨겨진 필드의 값은 유지합니다.
+  /** 계정 역할을 바꾸고 이전 역할에서 입력한 값을 초기화합니다.
    * @param value 새로 선택한 역할
    */
   function handleRoleChange(value: string) {
-    setValue('role', value as RegistrationRole, { shouldValidate: true, shouldDirty: true });
+    reset({
+      role: value as RegistrationRole,
+      name: '',
+      school: '',
+      phoneNumber: '',
+      teamNumber: '',
+      accountId: '',
+      password: '',
+      part: '',
+    });
+    setResultMessage('');
   }
 
   /** 선택한 항목을 폼 상태에 반영합니다.
@@ -293,9 +273,36 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
     handleSelectionChange('part', value);
   }
 
-  /** API 명세가 정해질 때까지 유효한 제출을 저장하지 않습니다. */
-  function handleSubmit() {
-    // 등록 API가 연결되기 전에는 저장하지 않습니다.
+  /** 등록 API 성공 시 목록으로 이동하고 실패 시 오류를 안내합니다.
+   * @param input 검증을 통과한 등록 입력값
+   */
+  async function handleSubmit(input: CreateValues) {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setResultMessage('');
+    try {
+      const result = await createUserAction(input);
+      if (!result.ok) {
+        setResultError(true);
+        setResultMessage(result.message);
+      } else {
+        router.replace('/users');
+      }
+    } catch {
+      setResultError(true);
+      setResultMessage('등록하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  /** 폼 검증을 통과한 입력값만 등록 요청에 전달합니다.
+   * @param event 폼 제출 이벤트
+   */
+  function handleFormSubmitEvent(event: FormEvent<HTMLFormElement>) {
+    void handleFormSubmit(handleSubmit)(event);
   }
 
   const fieldClass = 'w-full gap-[10px]';
@@ -324,7 +331,7 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
             </Link>
             <h1 className="text-display-sb-32">사용자 등록</h1>
           </div>
-          <form onSubmit={handleFormSubmit(handleSubmit)} noValidate>
+          <form onSubmit={handleFormSubmitEvent} noValidate>
             <div className="mb-7 w-80 max-w-full">
               <FormDropdown
                 name="role"
@@ -347,6 +354,9 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                   <>
                     <TextField
                       {...register('name')}
+                      errorMessage={
+                        formState.touchedFields.name ? formState.errors.name?.message : undefined
+                      }
                       label="이름"
                       placeholder="이름을 입력하세요"
                       required
@@ -355,6 +365,11 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                     />
                     <TextField
                       {...register('school')}
+                      errorMessage={
+                        formState.touchedFields.school
+                          ? formState.errors.school?.message
+                          : undefined
+                      }
                       label="학교"
                       placeholder="학교를 입력하세요"
                       required
@@ -368,7 +383,7 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                       inputMode="tel"
                       placeholder="010-0000-0000"
                       errorMessage={
-                        formState.touchedFields.phoneNumber && values.phoneNumber
+                        formState.touchedFields.phoneNumber
                           ? formState.errors.phoneNumber?.message
                           : undefined
                       }
@@ -391,6 +406,11 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                 {role !== '' && (
                   <TextField
                     {...register('accountId')}
+                    errorMessage={
+                      formState.touchedFields.accountId
+                        ? formState.errors.accountId?.message
+                        : undefined
+                    }
                     label="아이디"
                     placeholder="아이디를 입력하세요"
                     required
@@ -401,6 +421,11 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                 {role !== '' && (
                   <TextField
                     {...register('password')}
+                    errorMessage={
+                      formState.touchedFields.password
+                        ? formState.errors.password?.message
+                        : undefined
+                    }
                     label="비밀번호"
                     type="password"
                     autoComplete="new-password"
@@ -428,6 +453,8 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                     value={values.part ?? ''}
                     options={partOptions}
                     onChange={handlePartChange}
+                    adaptivePosition
+                    visibleOptionCount={3}
                   />
                 )}
               </div>
@@ -437,11 +464,19 @@ export function UserCreateForm({ sidebarVariant = 'admin' }: UserCreateFormProps
                 type="submit"
                 variant="primary"
                 size="small"
-                disabled={!formState.isValid}
+                disabled={!formState.isValid || isSubmitting}
                 className="h-12 w-[140px] max-w-[140px] self-end px-3 text-body-sb-16 disabled:bg-red-300"
               >
-                사용자 등록하기
+                {isSubmitting ? '등록 중...' : '사용자 등록하기'}
               </Button>
+              {resultMessage && (
+                <p
+                  role={resultError ? 'alert' : 'status'}
+                  className={`text-body-r-14 ${resultError ? 'text-red-400' : 'text-gray-200'}`}
+                >
+                  {resultMessage}
+                </p>
+              )}
             </div>
           </form>
         </main>
