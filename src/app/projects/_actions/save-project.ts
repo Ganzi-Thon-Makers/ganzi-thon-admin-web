@@ -6,24 +6,17 @@ import { getServerAuthTokens } from '@/lib/auth/cookies';
 
 import { requestProjectDetail } from '../_data/project-api';
 import { getProjectFormSchema, type ProjectFormValues } from '../_data/project-form';
+import { getMemberSelectionIssue } from '../_data/project-member-selection';
 import { createProject, toProjectSaveRequest, updateProject } from '../_data/project-mutation-api';
 import { requestProjectMemberCandidates } from '../_data/project-options-api';
 
 export type ProjectSaveResult = { ok: true } | { ok: false; message: string };
 
-/** 두 회원 ID 목록이 순서와 관계없이 같은지 확인합니다.
- * @param first 첫 번째 목록
- * @param second 두 번째 목록
- * @returns 동일 여부
- */
-function haveSameMemberIds(first: number[], second: number[]): boolean {
-  return first.length === second.length && first.every((id) => second.includes(id));
-}
-
 /** 후보 API의 역할과 소속을 확인해 회원 변경 요청의 안전성을 검사합니다.
  * @param accessToken 관리자 인증 토큰
- * @param selectedIds 최종 선택된 회원 ID
- * @param originalIds 기존 회원 ID
+ * @param selectedIds 최종 선택된 참가자 ID
+ * @param originalIds 상세 조회에 포함된 기존 팀원 ID
+ * @param teamNumber 저장할 팀번호
  * @param projectId 수정 대상 ID, 등록에서는 없음
  * @returns 안전하면 성공, 아니면 안내 메시지
  */
@@ -31,36 +24,20 @@ async function validateMemberSelection(
   accessToken: string,
   selectedIds: number[],
   originalIds: number[],
+  teamNumber: number,
   projectId?: number,
 ): Promise<ProjectSaveResult> {
-  if (new Set(selectedIds).size !== selectedIds.length)
-    return { ok: false, message: '중복된 팀원이 선택되었습니다.' };
   const result = await requestProjectMemberCandidates(accessToken);
   if (!result.ok)
     return { ok: false, message: '팀원 역할을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
-  const byId = new Map(result.data.map((candidate) => [candidate.userId, candidate]));
-  const allIds = [...new Set([...originalIds, ...selectedIds])];
-  if (allIds.some((id) => !byId.has(id)))
-    return {
-      ok: false,
-      message: '기존 팀원의 역할을 확인할 수 없어 팀원 변경을 저장할 수 없습니다.',
-    };
-  if (
-    selectedIds.some((id) => {
-      const owner = byId.get(id)?.projectId;
-      return owner === undefined || (owner !== null && owner !== projectId);
-    })
-  )
-    return { ok: false, message: '다른 프로젝트 소속이거나 소속을 확인할 수 없는 팀원입니다.' };
-  const selectedTeams = selectedIds.filter((id) => byId.get(id)?.role === 'TEAM');
-  if (selectedTeams.length > 1)
-    return { ok: false, message: '팀 계정은 한 개만 선택할 수 있습니다.' };
-  const originalTeam = originalIds.find((id) => byId.get(id)?.role === 'TEAM');
-  if (originalTeam && !selectedIds.includes(originalTeam) && selectedTeams.length === 0)
-    return {
-      ok: false,
-      message: '기존 팀 계정은 삭제할 수 없습니다. 교체할 팀 계정을 선택해 주세요.',
-    };
+  const issue = getMemberSelectionIssue(
+    result.data,
+    selectedIds,
+    originalIds,
+    teamNumber,
+    projectId,
+  );
+  if (issue) return { ok: false, message: issue };
   return { ok: true };
 }
 
@@ -104,10 +81,13 @@ export async function createProjectAction(values: ProjectFormValues): Promise<Pr
   const parsed = parseProjectValues(values, 'create', false);
   if (!parsed.success || !parsed.data.thumbnail)
     return { ok: false, message: '필수 입력값과 대표 이미지를 확인해 주세요.' };
-  if (parsed.data.memberIds.length > 0) {
-    const members = await validateMemberSelection(accessToken, parsed.data.memberIds, []);
-    if (!members.ok) return members;
-  }
+  const members = await validateMemberSelection(
+    accessToken,
+    parsed.data.memberIds,
+    [],
+    parsed.data.teamNumber!,
+  );
+  if (!members.ok) return members;
   const request = toProjectSaveRequest(parsed.data, parsed.data.memberIds);
   const result = await createProject(accessToken, request, parsed.data.thumbnail);
   if (!result.ok) return { ok: false, message: getSaveErrorMessage(result.status, result.message) };
@@ -115,7 +95,7 @@ export async function createProjectAction(values: ProjectFormValues): Promise<Pr
   return { ok: true };
 }
 
-/** 현재 프로젝트와 회원 역할을 재조회한 뒤 안전한 변경만 저장합니다.
+/** 현재 프로젝트와 회원 역할을 재조회하고 폼의 최종 참가자 목록을 저장합니다.
  * @param projectId 수정 대상 ID
  * @param values 수정 폼 값
  * @returns 저장 결과
@@ -134,21 +114,23 @@ export async function updateProjectAction(
   if (!detail.ok) return { ok: false, message: getSaveErrorMessage(detail.status, detail.message) };
   const parsed = parseProjectValues(values, 'edit', Boolean(detail.data.thumbnailUrl));
   if (!parsed.success) return { ok: false, message: '입력값을 확인해 주세요.' };
-  const originalIds = detail.data.members.map((member) => member.userId);
-  const membersChanged = !haveSameMemberIds(originalIds, parsed.data.memberIds);
-  if (membersChanged) {
-    const members = await validateMemberSelection(
-      accessToken,
-      parsed.data.memberIds,
-      originalIds,
-      projectId,
-    );
-    if (!members.ok) return members;
-  }
-  const request = toProjectSaveRequest(
-    parsed.data,
-    membersChanged ? parsed.data.memberIds : undefined,
+  const members = await validateMemberSelection(
+    accessToken,
+    parsed.data.memberIds,
+    detail.data.members.map(
+      /** 기존 팀원의 역할을 확인하기 위해 ID를 모읍니다.
+       * @param member 상세 조회의 팀원
+       * @returns 회원 ID
+       */
+      function toMemberId(member) {
+        return member.userId;
+      },
+    ),
+    parsed.data.teamNumber!,
+    projectId,
   );
+  if (!members.ok) return members;
+  const request = toProjectSaveRequest(parsed.data, parsed.data.memberIds);
   const result = await updateProject(accessToken, projectId, request, parsed.data.thumbnail);
   if (!result.ok) return { ok: false, message: getSaveErrorMessage(result.status, result.message) };
   revalidatePath('/projects');

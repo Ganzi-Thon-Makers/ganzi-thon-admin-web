@@ -79,7 +79,13 @@ export default async function ProjectEditPage({ params }: ProjectEditPageProps) 
             initialThumbnailUrl={project.thumbnailUrl}
             initialMembers={project.members}
             teams={teams.ok ? teams.data : []}
-            teamError={teams.ok ? undefined : teams.message}
+            teamError={
+              teams.ok
+                ? undefined
+                : teams.status === 401
+                  ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+                  : teams.message
+            }
           />
         </main>
       </div>

@@ -8,7 +8,7 @@ export interface ProjectSaveRequest {
   serviceUrl: string | null;
   teamName: string;
   teamNumber: number;
-  memberIds?: number[];
+  memberIds: number[];
   techStack: string;
   summary: string;
   description: string;
@@ -17,12 +17,12 @@ export interface ProjectSaveRequest {
 
 /** 검증된 폼 값을 서버 요청의 JSON 파트로 옮깁니다.
  * @param values 검증된 폼 값
- * @param memberIds 전송할 회원 ID 목록, 생략하면 기존 연결 유지
+ * @param memberIds 전송할 최종 참가자 ID 목록
  * @returns 프로젝트 저장 요청
  */
 export function toProjectSaveRequest(
   values: ProjectFormValues,
-  memberIds?: number[],
+  memberIds: number[],
 ): ProjectSaveRequest {
   if (values.teamNumber === null || values.platform === null)
     throw new Error('필수 입력값을 확인해 주세요.');
@@ -31,7 +31,7 @@ export function toProjectSaveRequest(
     serviceUrl: values.serviceUrl.trim() || null,
     teamName: values.teamName,
     teamNumber: values.teamNumber,
-    ...(memberIds === undefined ? {} : { memberIds }),
+    memberIds,
     techStack: values.techStack,
     summary: values.summary,
     description: values.description,

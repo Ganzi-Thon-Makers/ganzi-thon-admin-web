@@ -280,8 +280,8 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
               프로젝트 삭제
             </Button>
             <Button
+              nativeButton={false}
               render={<Link href={`/projects/${project.id}/edit`} />}
-              type="button"
               size="lg"
               className="h-12 w-[136px] rounded-[4px] bg-red-500 px-6 text-body-sb-16"
             >

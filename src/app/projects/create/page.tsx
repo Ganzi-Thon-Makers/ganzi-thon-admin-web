@@ -12,6 +12,13 @@ export default async function ProjectCreatePage() {
   const { accessToken, role } = await getServerAuthTokens();
   const sidebarVariant = role === 'SUPER_ADMIN' ? 'superadmin' : 'admin';
   const teamsResult = accessToken ? await requestProjectTeams(accessToken) : null;
+  const teamError = !accessToken
+    ? '로그인이 필요합니다. 다시 로그인해 주세요.'
+    : teamsResult && !teamsResult.ok
+      ? teamsResult.status === 401
+        ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+        : teamsResult.message
+      : undefined;
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
@@ -31,7 +38,7 @@ export default async function ProjectCreatePage() {
             mode="create"
             onSave={createProjectAction}
             teams={teamsResult?.ok ? teamsResult.data : []}
-            teamError={teamsResult && !teamsResult.ok ? teamsResult.message : undefined}
+            teamError={teamError}
           />
         </main>
       </div>

@@ -184,8 +184,8 @@ export function ProjectListClient({ projects, initialKeyword }: ProjectListClien
           ) : null}
         </div>
         <Button
+          nativeButton={false}
           render={<Link href="/projects/create" />}
-          type="button"
           size="sm"
           className="h-12 w-34 rounded-[4px] px-6 text-body-sb-16 text-static-white"
         >

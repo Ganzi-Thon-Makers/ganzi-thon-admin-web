@@ -14,7 +14,7 @@ export type ProjectPart = 'PLAN' | 'DESIGN' | 'WEB' | 'APP' | 'SERVER';
 
 export interface ProjectMember {
   userId: number;
-  part: ProjectPart;
+  part: ProjectPart | null;
   name: string;
 }
 
@@ -58,7 +58,7 @@ function validateProjectDetail(
           member !== null &&
           typeof member === 'object' &&
           Number.isSafeInteger(member.userId) &&
-          parts.includes(member.part) &&
+          (member.part === null || parts.includes(member.part)) &&
           typeof member.name === 'string'
         );
       },
