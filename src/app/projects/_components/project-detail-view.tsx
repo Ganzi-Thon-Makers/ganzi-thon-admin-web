@@ -2,13 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { AdminHeaderContent } from '@/components/layout/admin-header-content';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { Modal } from '@/components/ui/modal';
 
 import type { ProjectDetail, ProjectPart } from '../_data/project-api';
 
@@ -64,6 +65,57 @@ function ProjectThumbnail({ url, title }: ProjectThumbnailProps) {
 
 /** 프로젝트의 조회 전용 상세 정보를 표시합니다. */
 export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewProps) {
+  const deletingRef = useRef(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState('');
+
+  /** 프로젝트 삭제 확인 모달을 열고 이전 오류를 지웁니다. */
+  function handleDeleteClick() {
+    setDeleteErrorMessage('');
+    setDeleteModalOpen(true);
+  }
+
+  /** 삭제 요청 중에는 모달이 닫히지 않도록 열림 상태를 갱신합니다.
+   * @param open 다음 모달 열림 상태
+   */
+  function handleDeleteModalOpenChange(open: boolean) {
+    if (!deletingRef.current) setDeleteModalOpen(open);
+  }
+
+  /** 확인된 프로젝트 삭제 요청을 한 번 보내고 성공 시 목록으로 이동합니다. */
+  async function handleConfirmDelete() {
+    if (deletingRef.current) return;
+    deletingRef.current = true;
+    setIsDeleting(true);
+    setDeleteErrorMessage('');
+
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(String(project.id))}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        let message = '프로젝트를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+        try {
+          const payload = (await response.json()) as { message?: string };
+          if (payload.message) message = payload.message;
+        } catch {
+          // 오류 응답에 JSON 본문이 없어도 기본 안내를 표시합니다.
+        }
+        setDeleteErrorMessage(message);
+        return;
+      }
+
+      setDeleteModalOpen(false);
+      window.location.replace('/projects');
+    } catch {
+      setDeleteErrorMessage('서버와 통신할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      deletingRef.current = false;
+      setIsDeleting(false);
+    }
+  }
+
   const membersByPart = PART_ORDER.map(
     /** 파트별 참여자를 응답 순서를 유지해 묶습니다.
      * @param part 표시할 파트
@@ -223,6 +275,7 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
               size="lg"
               variant="secondary"
               className="h-12 w-[136px] rounded-[4px] bg-gray-700 px-6 text-body-sb-16"
+              onClick={handleDeleteClick}
             >
               프로젝트 삭제
             </Button>
@@ -236,6 +289,26 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
           </div>
         </main>
       </div>
+      <Modal
+        open={deleteModalOpen}
+        onOpenChange={handleDeleteModalOpenChange}
+        title="프로젝트를 삭제할까요?"
+        description={
+          '프로젝트 정보와 받은 투표, 부스 배정이 함께 초기화 됩니다.\n삭제 후 되돌릴 수 없습니다.'
+        }
+        cancelLabel="취소"
+        confirmLabel={isDeleting ? '삭제 중...' : '프로젝트 삭제'}
+        onConfirm={handleConfirmDelete}
+        confirmDisabled={isDeleting}
+        cancelDisabled={isDeleting}
+        disableDismiss={isDeleting}
+      >
+        {deleteErrorMessage ? (
+          <p role="alert" className="text-body-r-16 text-red-400">
+            {deleteErrorMessage}
+          </p>
+        ) : null}
+      </Modal>
     </div>
   );
 }
