@@ -2,8 +2,8 @@ import { io } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
-import { Icon } from '@/components/ui/icon';
 import { getServerAuthSession } from '@/lib/auth/cookies';
 
 import { TimetableListClient, TimetableListLoading } from './_components/timetable-list-client';
@@ -33,10 +33,7 @@ export default async function TimetablesPage() {
         className="sticky top-0 h-screen min-h-0 self-start"
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-22 shrink-0 items-center justify-end gap-4 border-b border-gray-800 bg-gray-800 px-10">
-          <span className="text-body-m-16 text-gray-50">운영 관리자</span>
-          <Icon name="user" size={32} />
-        </header>
+        <AdminHeader />
         <main className="flex-1 px-6 pt-12 pb-10 md:px-10 xl:px-16">
           <h1 className="mb-7 text-display-sb-36 text-gray-50">타임테이블 관리</h1>
           <Suspense fallback={<TimetableListLoading />}>

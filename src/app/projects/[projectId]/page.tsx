@@ -18,7 +18,7 @@ async function ProjectDetailData({ params }: ProjectDetailPageProps) {
   const { projectId } = await params;
   if (!/^[1-9]\d*$/.test(projectId) || !Number.isSafeInteger(Number(projectId))) notFound();
 
-  const { accessToken, role } = await getServerAuthTokens();
+  const { accessToken, role, loginId } = await getServerAuthTokens();
   if (!accessToken || !role) redirect('/');
 
   const result = await requestProjectDetail(accessToken, projectId);
@@ -49,6 +49,7 @@ async function ProjectDetailData({ params }: ProjectDetailPageProps) {
   return (
     <ProjectDetailView
       project={result.data}
+      loginId={loginId}
       role={role === 'SUPER_ADMIN' ? 'superadmin' : 'admin'}
     />
   );
