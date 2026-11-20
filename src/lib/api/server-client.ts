@@ -137,11 +137,17 @@ export async function requestServerApi<
 
   try {
     const headers = new Headers(options.headers);
-    if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+    if (options.body !== undefined && !(options.body instanceof FormData))
+      headers.set('Content-Type', 'application/json');
     const response = await fetch(`${baseUrl}/${endpoint.replace(/^\/+/, '')}`, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined
+          ? undefined
+          : options.body instanceof FormData
+            ? options.body
+            : JSON.stringify(options.body),
       cache: 'no-store',
     });
 
