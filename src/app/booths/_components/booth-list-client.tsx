@@ -138,7 +138,7 @@ function BoothCard({ booth, isSelected, onSelect }: BoothCardProps) {
     ? booth.projectName || booth.teamName || '배정 프로젝트'
     : '팀 배정 가능';
   const cardClassName = cn(
-    'flex w-full cursor-pointer flex-col items-start rounded-lg border bg-gray-900 p-5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-red-500',
+    'flex w-full cursor-pointer flex-col items-start rounded-lg bg-gray-900 p-5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-red-500',
     isSelected ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-700 hover:border-gray-500',
   );
   const cardContent = (
@@ -218,10 +218,7 @@ function BoothRoomSection({ room, selectedBoothId, onSelectBooth }: BoothRoomSec
   }
 
   return (
-    <section
-      aria-labelledby={`booth-room-${room.id}`}
-      className="rounded-xl border border-gray-700 bg-gray-800 p-7"
-    >
+    <section aria-labelledby={`booth-room-${room.id}`} className="rounded-xl bg-gray-800 p-7">
       <div className="mb-6 flex flex-wrap items-baseline gap-3">
         <h2 id={`booth-room-${room.id}`} className="text-title-sb-24 text-gray-50">
           {room.name}

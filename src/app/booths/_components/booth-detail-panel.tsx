@@ -90,10 +90,7 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
 
   const isLoadingProjects = !isAssigned && (isProjectsPending || isProjectsFetching);
   const projectsErrorMessage = !isAssigned ? projectsError?.message : undefined;
-  const locationText =
-    booth.location && booth.location.trim() && booth.location.trim() !== roomName
-      ? `${zoneLabel} / ${roomName} / ${booth.location.trim()}`
-      : `${zoneLabel} / ${roomName}`;
+  const locationText = `${zoneLabel} · ${roomName}`;
 
   const assignedTeamLabel = assignedProject
     ? formatPanelTeamLabel(assignedProject)
@@ -120,7 +117,7 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
       return '배정 가능한 팀을 불러오는 중입니다...';
     }
     if (!value) {
-      return '배정할 팀을 선택하세요';
+      return '미배정 팀 선택';
     }
 
     /**
@@ -133,7 +130,7 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
     }
 
     const matched = assignableProjects.find(matchesSelectedProject);
-    return matched ? formatPanelTeamLabel(matched) : '배정할 팀을 선택하세요';
+    return matched ? formatPanelTeamLabel(matched) : '미배정 팀 선택';
   }
 
   /**
@@ -250,22 +247,29 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
   return (
     <aside
       aria-label="부스 상세 및 팀 배정"
-      className="w-full rounded-xl border border-gray-700 bg-gray-800 p-7 xl:sticky xl:top-8 xl:w-[360px] xl:shrink-0"
+      className="flex h-[500px] w-full flex-col rounded-xl bg-gray-800 p-8 xl:sticky xl:top-8 xl:w-[444px] xl:shrink-0"
     >
       <div className="flex flex-col items-start">
-        <Badge
-          color={isAssigned ? 'red' : 'none'}
-          size="medium"
-          className={isAssigned ? undefined : 'text-gray-300'}
-        >
-          {isAssigned ? '배정 완료' : '미배정'}
-        </Badge>
+        <div className="flex w-full items-center justify-between gap-3">
+          <Badge
+            color={isAssigned ? 'red' : 'none'}
+            size="medium"
+            className={isAssigned ? undefined : 'text-gray-300'}
+          >
+            {isAssigned ? '배정 완료' : '미배정'}
+          </Badge>
+        </div>
 
         <h2 className="mt-4 text-title-sb-24 text-gray-50">{booth.boothNumber}번 부스</h2>
-        <p className="mt-1 text-body-r-14 text-gray-400">{locationText}</p>
+        <p className="mt-1 text-body-r-14 text-gray-300">{locationText}</p>
       </div>
 
-      <form onSubmit={handleAssignSubmit} noValidate aria-busy={isSaving}>
+      <form
+        onSubmit={handleAssignSubmit}
+        noValidate
+        aria-busy={isSaving}
+        className="flex flex-1 flex-col"
+      >
         <Field className="mt-7 gap-2">
           <FieldLabel
             htmlFor={teamSelectId}
@@ -282,7 +286,7 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
           >
             <SelectTrigger
               id={teamSelectId}
-              className="h-12 w-full cursor-pointer rounded-[4px] border border-gray-700 bg-gray-900 px-4 text-body-r-14 text-gray-50 data-placeholder:text-gray-400 data-[size=default]:h-12"
+              className="h-12 w-full cursor-pointer rounded-[4px] bg-gray-900 px-4 text-body-r-14 text-gray-50 data-placeholder:text-gray-400 data-[size=default]:h-12"
             >
               <SelectValue>{renderSelectDisplayValue}</SelectValue>
             </SelectTrigger>
@@ -330,7 +334,7 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
             </FieldDescription>
           ) : (
             <FieldDescription className="text-caption-r-12">
-              아직 부스가 배정되지 않은 팀만 선택할 수 있습니다.
+              이미 배정된 팀은 목록에 표시되지 않습니다.
             </FieldDescription>
           )}
         </Field>
@@ -341,30 +345,33 @@ export function BoothDetailPanel({ zoneLabel, roomName, booth }: BoothDetailPane
           </FieldError>
         ) : null}
 
-        <div className="mt-8 flex flex-col">
+        <div className="mt-auto flex flex-col items-start pt-8">
           {isAssigned ? (
             <Button
               type="button"
               variant="secondary"
               size="large"
-              fullWidth
               nativeButton={false}
               render={<Link href={`/booths/${encodeURIComponent(booth.id)}`} />}
-              className="h-12 rounded-[4px] text-body-sb-16"
+              className="h-12 w-auto max-w-none rounded-[4px] px-6 text-body-sb-16"
             >
               부스 상세 보기
             </Button>
           ) : (
-            <Button
-              type="submit"
-              variant="primary"
-              size="large"
-              fullWidth
-              disabled={!canSubmit}
-              className="h-12 rounded-[4px] text-body-sb-16"
-            >
-              {isSaving ? '저장 중...' : '팀 배정 저장'}
-            </Button>
+            <>
+              <Button
+                type="submit"
+                variant="primary"
+                size="large"
+                disabled={!canSubmit}
+                className="h-12 w-auto max-w-none rounded-[4px] px-6 text-body-sb-16"
+              >
+                {isSaving ? '저장 중...' : '팀 배정 저장'}
+              </Button>
+              <p className="mt-2.5 text-caption-r-12 text-gray-400">
+                저장 즉시 참가자 부스 화면에 반영됩니다.
+              </p>
+            </>
           )}
         </div>
       </form>
