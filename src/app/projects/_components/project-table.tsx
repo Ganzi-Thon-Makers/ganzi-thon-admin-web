@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Icon } from '@/components/ui/icon';
 
 import type { Project } from '../_data/project-api';
@@ -34,12 +36,18 @@ export function ProjectTable({
         <td className="px-6 text-left">{project.voteCount}표</td>
         <td className="px-6 text-left">{String(project.teamNumber).padStart(2, '0')}</td>
         <td className="pr-10 pl-6 text-right">
-          <span
-            className="inline-flex cursor-pointer items-center gap-1 text-body-r-16 text-gray-100"
-            aria-label="상세 보기 기능 준비 중"
+          <Link
+            href={`/projects/${project.id}`}
+            className="inline-flex items-center gap-1 text-body-r-16 text-gray-100 hover:text-red-400 focus-visible:outline-2 focus-visible:outline-ring"
+            aria-label={`${project.title} 상세 보기`}
           >
-            상세 보기 <Icon name="chevron-right" size={24} />
-          </span>
+            상세 보기{' '}
+            <Icon
+              name="chevron-right"
+              size={24}
+              className="bg-current [mask-image:url('/icons/ic-chevron-right.svg')] [mask-size:contain] [mask-position:center] [mask-repeat:no-repeat] [&_img]:opacity-0"
+            />
+          </Link>
         </td>
       </tr>
     );
