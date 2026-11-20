@@ -15,6 +15,7 @@ import type { ProjectDetail, ProjectPart } from '../_data/project-api';
 interface ProjectDetailViewProps {
   project: ProjectDetail;
   role: 'admin' | 'superadmin';
+  loginId?: string;
 }
 
 interface ProjectThumbnailProps {
@@ -62,7 +63,7 @@ function ProjectThumbnail({ url, title }: ProjectThumbnailProps) {
 }
 
 /** 프로젝트의 조회 전용 상세 정보를 표시합니다. */
-export function ProjectDetailView({ project, role }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewProps) {
   const membersByPart = PART_ORDER.map(
     /** 파트별 참여자를 응답 순서를 유지해 묶습니다.
      * @param part 표시할 파트
@@ -108,7 +109,7 @@ export function ProjectDetailView({ project, role }: ProjectDetailViewProps) {
         className="sticky top-0 h-screen min-h-0 self-start"
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AdminHeader />
+        <AdminHeader loginId={loginId} />
         <main className="flex-1 px-6 pt-10 pb-10 sm:px-10 xl:px-16 xl:pt-[70px]">
           <div className="mb-7 flex items-center gap-4">
             <Link
