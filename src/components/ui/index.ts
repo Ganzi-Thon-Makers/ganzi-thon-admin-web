@@ -41,9 +41,11 @@ export type {
 export { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from './input-group';
 export type { LabelProps } from './label';
 export { Label } from './label';
+export type { ModalProps } from './modal';
+export { Modal } from './modal';
 export type { PaginationProps } from './pagination';
 export { Pagination } from './pagination';
-export type { SidebarNavItem, SidebarProps, SidebarVariant } from './sidebar';
-export { Sidebar } from './sidebar';
+export type { SidebarClientProps, SidebarNavItem, SidebarVariant } from './sidebar-client';
+export { SidebarClient } from './sidebar-client';
 export type { TextFieldProps } from './text-field';
 export { TextField } from './text-field';

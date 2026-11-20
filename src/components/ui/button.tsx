@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
  * Button 컴포넌트의 스타일 및 크기 변형 정의
  */
 const buttonVariants = cva(
-  'inline-flex shrink-0 self-start items-center justify-center rounded-[4px] font-sans whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0',
+  'inline-flex shrink-0 self-start cursor-pointer items-center justify-center rounded-[4px] font-sans whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
     variants: {
       variant: {

@@ -1,0 +1,312 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
+
+import type { UserListQuery } from '../_data/user-api';
+import { UserFilters, type UserStatusFilter } from './user-filters';
+import { UserTable, type UserTableItem } from './user-table';
+
+const USERS_PER_PAGE = 8;
+
+export interface UserListClientProps {
+  /** 검색 및 필터할 사용자 원본 목록 */
+  users: UserTableItem[];
+  initialQuery: UserListQuery;
+  /** 사용자 상세 보기 선택 콜백 */
+  onViewDetails: (userId: string) => void;
+}
+
+/** 검색·필터 조건에 맞는 참여자를 서버 경로를 통해 조회합니다.
+ * @param keyword 이름 검색어
+ * @param luckyDrawFilter 응모 여부
+ * @param completionFilter 수료 여부
+ * @param signal 취소된 요청을 중단하는 신호
+ * @returns 조건에 맞는 전체 사용자 목록
+ */
+async function fetchUsers(
+  keyword: string,
+  luckyDrawFilter: UserStatusFilter,
+  completionFilter: UserStatusFilter,
+  signal: AbortSignal,
+): Promise<UserTableItem[]> {
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', keyword);
+  if (luckyDrawFilter !== 'all') params.set('luckyDrawEntered', String(luckyDrawFilter === 'yes'));
+  if (completionFilter !== 'all') params.set('completed', String(completionFilter === 'yes'));
+  const search = params.toString();
+  const response = await fetch(`/api/users${search ? `?${search}` : ''}`, { signal });
+  const body = (await response.json()) as { data?: UserTableItem[]; message?: string };
+  if (!response.ok) {
+    throw new Error(body.message || '사용자 목록을 불러오지 못했습니다.');
+  }
+  if (!Array.isArray(body.data)) throw new Error('사용자 목록 응답 형식이 올바르지 않습니다.');
+  return body.data;
+}
+
+/** 두 사용자의 이름을 한국어 가나다순으로 비교합니다.
+ * @param firstUser 비교할 첫 번째 사용자
+ * @param secondUser 비교할 두 번째 사용자
+ * @returns 가나다순 정렬에 사용할 비교 결과
+ */
+function compareUsersByName(firstUser: UserTableItem, secondUser: UserTableItem) {
+  return firstUser.name.localeCompare(secondUser.name, 'ko-KR');
+}
+
+/** API 조건을 필터 선택값으로 변환합니다.
+ * @param value 응모 또는 수료 여부
+ * @returns 화면의 선택값
+ */
+function toStatusFilter(value: boolean | undefined): UserStatusFilter {
+  if (value === undefined) return 'all';
+  return value ? 'yes' : 'no';
+}
+
+/** 현재 주소에서 변경된 검색 조건만 갱신합니다.
+ * @param name 변경할 쿼리 파라미터
+ * @param value 적용할 값 또는 전체 조회를 뜻하는 빈 문자열
+ * @returns 반환값 없음
+ */
+function updateFilterUrl(name: keyof UserListQuery, value: string) {
+  const url = new URL(window.location.href);
+  if (value) url.searchParams.set(name, value);
+  else url.searchParams.delete(name);
+  window.history.replaceState(null, '', url);
+}
+
+/** 검색어와 상태 필터를 적용한 사용자 목록을 표시합니다. */
+export function UserListClient({ users, initialQuery, onViewDetails }: UserListClientProps) {
+  const [searchTerm, setSearchTerm] = useState(initialQuery.keyword ?? '');
+  const [keyword, setKeyword] = useState(initialQuery.keyword ?? '');
+  const [luckyDrawFilter, setLuckyDrawFilter] = useState(
+    toStatusFilter(initialQuery.luckyDrawEntered),
+  );
+  const [completionFilter, setCompletionFilter] = useState(toStatusFilter(initialQuery.completed));
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasStatusFilter = luckyDrawFilter !== 'all' || completionFilter !== 'all';
+  const hasActiveCondition = Boolean(searchTerm.trim()) || hasStatusFilter;
+
+  useEffect(
+    /** 검색어 변경 후 300ms가 지나면 API 요청용 검색어를 갱신합니다.
+     * @returns 이전 타이머를 취소하는 정리 함수
+     */
+    function scheduleKeywordUpdate() {
+      if (searchTerm.trim() === keyword) return;
+
+      /** 타이머가 완료되면 앞뒤 공백을 제거한 검색어를 반영합니다. */
+      function applyKeyword() {
+        updateFilterUrl('keyword', searchTerm.trim());
+        setKeyword(searchTerm.trim());
+      }
+
+      const timer = window.setTimeout(applyKeyword, 300);
+
+      /** 검색어가 다시 바뀌거나 컴포넌트가 종료되면 타이머를 취소합니다. */
+      function clearKeywordTimer() {
+        window.clearTimeout(timer);
+      }
+
+      return clearKeywordTimer;
+    },
+    [searchTerm, keyword],
+  );
+
+  const isSearchSettling = searchTerm.trim() !== keyword;
+
+  /** 현재 검색어와 필터 조건으로 사용자 목록을 조회합니다.
+   * @param context TanStack Query가 전달한 요청 취소 신호
+   * @returns 현재 조건에 맞는 사용자 목록
+   */
+  function queryUsers({ signal }: { signal: AbortSignal }) {
+    return fetchUsers(keyword, luckyDrawFilter, completionFilter, signal);
+  }
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ['users', keyword, luckyDrawFilter, completionFilter],
+    queryFn: queryUsers,
+    initialData:
+      keyword === (initialQuery.keyword ?? '') &&
+      luckyDrawFilter === toStatusFilter(initialQuery.luckyDrawEntered) &&
+      completionFilter === toStatusFilter(initialQuery.completed)
+        ? users
+        : undefined,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const filteredUsers = isSearchSettling ? [] : (data ?? []).toSorted(compareUsersByName);
+
+  const pageCount = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const pageStartIndex = (currentPage - 1) * USERS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(pageStartIndex, pageStartIndex + USERS_PER_PAGE);
+
+  /** 검색어가 바뀌면 검색 상태를 갱신하고 첫 페이지로 이동합니다.
+   * @param value 변경된 이름 검색어
+   */
+  function handleSearchTermChange(value: string) {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  }
+
+  /** 응모 필터가 바뀌면 선택값을 갱신하고 첫 페이지로 이동합니다.
+   * @param value 변경된 응모 여부 필터
+   */
+  function handleLuckyDrawFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('luckyDrawEntered', value === 'all' ? '' : String(value === 'yes'));
+    setLuckyDrawFilter(value);
+    setCurrentPage(1);
+  }
+
+  /** 수료 필터가 바뀌면 선택값을 갱신하고 첫 페이지로 이동합니다.
+   * @param value 변경된 수료 여부 필터
+   */
+  function handleCompletionFilterChange(value: UserStatusFilter) {
+    updateFilterUrl('completed', value === 'all' ? '' : String(value === 'yes'));
+    setCompletionFilter(value);
+    setCurrentPage(1);
+  }
+
+  /** 페이지네이션에서 선택한 페이지를 현재 페이지로 설정합니다.
+   * @param page 선택한 페이지 번호
+   */
+  function handlePageChange(page: number) {
+    setCurrentPage(page);
+  }
+
+  /** CSV 셀을 수식 실행 없이 열 수 있도록 안전하게 인용합니다.
+   * @param value CSV 셀에 넣을 원본 값
+   * @returns 따옴표와 수식 방지 처리가 적용된 CSV 셀
+   */
+  function escapeCsvCell(value: string) {
+    const safeValue = /^[\t\r\n ]*[=+\-@]/.test(value) ? `'${value}` : value;
+    return `"${safeValue.replace(/"/g, '""')}"`;
+  }
+
+  /** 사용자 정보를 Figma의 지정된 열 순서에 맞춘 CSV 행으로 만듭니다.
+   * @param user CSV로 내보낼 사용자
+   * @returns CSV 열 순서에 맞춘 사용자 값 배열
+   */
+  function getUserCsvRow(user: UserTableItem) {
+    return [
+      user.name,
+      user.school,
+      user.phoneNumber,
+      user.hasEnteredLuckyDraw ? '응모 완료' : '미응모',
+      user.hasCompletedCourse ? '수료 완료' : '미수료',
+      user.teamNumber,
+    ];
+  }
+
+  /** CSV 행의 각 셀을 이스케이프하고 쉼표로 연결합니다.
+   * @param row CSV로 인코딩할 셀 값 목록
+   * @returns 이스케이프된 CSV 한 줄
+   */
+  function encodeCsvRow(row: string[]) {
+    return row.map(escapeCsvCell).join(',');
+  }
+
+  /** 현재 검색·필터 결과 전체를 UTF-8 BOM이 포함된 CSV 파일로 내려받습니다. */
+  function handleDownloadUsers() {
+    const headers = ['이름', '학교', '전화번호', '럭키드로우', '수료 여부', '팀번호'];
+    const rows = filteredUsers.map(getUserCsvRow);
+    const csvContent = [headers, ...rows].map(encodeCsvRow).join('\r\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const objectUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    downloadLink.href = objectUrl;
+    downloadLink.download = `admin-users-${year}-${month}-${day}.csv`;
+    document.body.append(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    /** 다운로드가 시작된 다음 임시 Blob 주소를 해제합니다. */
+    function handleRevokeObjectUrl() {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    window.setTimeout(handleRevokeObjectUrl, 0);
+  }
+
+  return (
+    <div className="flex flex-col">
+      <div className={`flex flex-wrap items-start gap-4 ${hasStatusFilter ? 'mb-2' : 'mb-7'}`}>
+        <div className="min-w-0 flex-1">
+          <UserFilters
+            searchTerm={searchTerm}
+            onSearchTermChange={handleSearchTermChange}
+            luckyDrawFilter={luckyDrawFilter}
+            onLuckyDrawFilterChange={handleLuckyDrawFilterChange}
+            completionFilter={completionFilter}
+            onCompletionFilterChange={handleCompletionFilterChange}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={
+              !hasActiveCondition ||
+              isSearchSettling ||
+              isPending ||
+              Boolean(error) ||
+              filteredUsers.length === 0
+            }
+            onClick={handleDownloadUsers}
+            className={`h-12 w-40 rounded-[4px] px-6 text-body-sb-16 text-static-white enabled:cursor-pointer ${
+              hasActiveCondition &&
+              !isSearchSettling &&
+              !isPending &&
+              !error &&
+              filteredUsers.length > 0
+                ? 'bg-gray-700 hover:bg-gray-700 active:bg-gray-700'
+                : 'disabled:bg-gray-300 disabled:text-static-white'
+            }`}
+          >
+            목록 다운로드
+          </Button>
+          <Link
+            href="/users/create"
+            className="inline-flex h-12 w-40 items-center justify-center rounded-[4px] bg-red-500 px-6 text-body-sb-16 text-static-white hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            사용자 추가
+          </Link>
+        </div>
+      </div>
+
+      <div className="mb-7 overflow-x-auto">
+        {isSearchSettling || isPending ? (
+          <p role="status" className="text-body-r-16 text-gray-300">
+            사용자 목록을 불러오는 중입니다...
+          </p>
+        ) : error ? (
+          <p role="alert" className="text-body-r-16 text-red-400">
+            {error.message}
+          </p>
+        ) : (
+          <UserTable users={paginatedUsers} onViewDetails={onViewDetails} />
+        )}
+      </div>
+
+      {!isSearchSettling && !isPending && !error && filteredUsers.length > 0 && pageCount > 1 ? (
+        <Pagination
+          pageCount={pageCount}
+          page={currentPage}
+          onPageChange={handlePageChange}
+          className="justify-center [&_button:disabled]:cursor-not-allowed [&_button:not(:disabled)]:cursor-pointer"
+        />
+      ) : null}
+    </div>
+  );
+}
