@@ -9,6 +9,7 @@ export const AUTH_COOKIE_NAMES = {
   accessToken: 'ganzithon_bo_access_token',
   refreshToken: 'ganzithon_bo_refresh_token',
   role: 'ganzithon_bo_role',
+  loginId: 'ganzithon_bo_login_id',
 } as const;
 
 const ALLOWED_BACKOFFICE_ROLES: readonly BackofficeRole[] = ['ADMIN', 'SUPER_ADMIN'];
@@ -39,13 +40,17 @@ export function getAuthCookieOptions() {
  * 백오피스 인증 토큰과 역할을 HttpOnly 보안 쿠키에 저장한다.
  * @param tokens 저장할 accessToken / refreshToken / role 정보
  */
-export async function setAuthCookies(tokens: BackofficeAuthTokens): Promise<void> {
+export async function setAuthCookies(
+  tokens: BackofficeAuthTokens,
+  loginId?: string,
+): Promise<void> {
   const cookieStore = await cookies();
   const options = getAuthCookieOptions();
 
   cookieStore.set(AUTH_COOKIE_NAMES.accessToken, tokens.accessToken, options);
   cookieStore.set(AUTH_COOKIE_NAMES.refreshToken, tokens.refreshToken, options);
   cookieStore.set(AUTH_COOKIE_NAMES.role, tokens.role, options);
+  if (loginId) cookieStore.set(AUTH_COOKIE_NAMES.loginId, loginId, options);
 }
 
 /**
@@ -57,6 +62,7 @@ export async function clearAuthCookies(): Promise<void> {
   cookieStore.delete(AUTH_COOKIE_NAMES.accessToken);
   cookieStore.delete(AUTH_COOKIE_NAMES.refreshToken);
   cookieStore.delete(AUTH_COOKIE_NAMES.role);
+  cookieStore.delete(AUTH_COOKIE_NAMES.loginId);
 }
 
 /**
@@ -67,16 +73,19 @@ export async function getServerAuthTokens(): Promise<{
   accessToken?: string;
   refreshToken?: string;
   role?: BackofficeRole;
+  loginId?: string;
 }> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIE_NAMES.accessToken)?.value;
   const refreshToken = cookieStore.get(AUTH_COOKIE_NAMES.refreshToken)?.value;
   const rawRole = cookieStore.get(AUTH_COOKIE_NAMES.role)?.value;
+  const loginId = cookieStore.get(AUTH_COOKIE_NAMES.loginId)?.value;
 
   return {
     accessToken,
     refreshToken,
     role: isBackofficeRole(rawRole) ? rawRole : undefined,
+    loginId,
   };
 }
 

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,10 +108,7 @@ export function ProjectDetailView({ project, role }: ProjectDetailViewProps) {
         className="sticky top-0 h-screen min-h-0 self-start"
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-22 shrink-0 items-center justify-end gap-4 bg-gray-800 px-6 sm:px-10">
-          <span className="text-body-m-16 text-gray-50">운영 관리자</span>
-          <Icon name="user" size={32} />
-        </header>
+        <AdminHeader />
         <main className="flex-1 px-6 pt-10 pb-10 sm:px-10 xl:px-16 xl:pt-[70px]">
           <div className="mb-7 flex items-center gap-4">
             <Link
