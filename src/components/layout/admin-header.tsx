@@ -1,27 +1,11 @@
-import { Icon } from '@/components/ui/icon';
+import { AdminHeaderContent } from '@/components/layout/admin-header-content';
 import { getServerAuthTokens } from '@/lib/auth/cookies';
-interface AdminHeaderProps {
-  loginId?: string;
-}
 
-/** 관리자 로그인 아이디를 표시하는 공통 헤더입니다. */
+/** 현재 인증된 관리자 아이디를 표시하는 서버 헤더입니다.
+ * @returns 로그인 아이디가 연결된 관리자 헤더
+ */
 export async function AdminHeader() {
   const { loginId } = await getServerAuthTokens();
 
   return <AdminHeaderContent loginId={loginId} />;
-}
-
-/** 전달된 로그인 아이디를 헤더에 표시합니다. */
-export function AdminHeaderContent({ loginId }: AdminHeaderProps) {
-  return (
-    <header className="flex h-22 shrink-0 items-center justify-end gap-4 border-b border-gray-800 bg-gray-800 px-6 sm:px-10">
-      <span
-        className="max-w-[min(40vw,20rem)] truncate text-body-m-16 text-gray-50"
-        title={loginId}
-      >
-        {loginId || '운영 관리자'}
-      </span>
-      <Icon name="user" size={32} />
-    </header>
-  );
 }

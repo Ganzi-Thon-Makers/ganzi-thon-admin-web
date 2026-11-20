@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { AdminHeaderContent } from '@/components/layout/admin-header';
+import { AdminHeaderContent } from '@/components/layout/admin-header-content';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
