@@ -47,7 +47,7 @@ export async function loginAction(
     };
   }
 
-  await setAuthCookies(result.data);
+  await setAuthCookies(result.data, loginId);
   redirect('/users');
 }
 

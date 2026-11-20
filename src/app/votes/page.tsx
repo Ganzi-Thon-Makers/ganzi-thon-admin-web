@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthenticatedSidebar } from '@/components/layout/authenticated-sidebar';
-import { Icon } from '@/components/ui/icon';
 import { getServerAuthSession } from '@/lib/auth/cookies';
 
 import { VoteScheduleLoading, VoteScheduleSection } from './_components/vote-schedule';
@@ -25,10 +25,7 @@ export default async function VotesPage() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-22 shrink-0 items-center justify-end gap-4 border-b border-gray-800 bg-gray-800 px-10">
-          <span className="text-body-m-16 text-gray-50">운영 관리자</span>
-          <Icon name="user" size={32} />
-        </header>
+        <AdminHeader />
         <main className="group flex-1 px-6 pt-12 pb-10 md:px-10 xl:px-16">
           <h1 className="mb-7 text-[32px] leading-[42px] font-semibold tracking-[-0.01em] text-gray-50">
             <span className="group-has-data-vote-editing:hidden">투표 관리</span>
