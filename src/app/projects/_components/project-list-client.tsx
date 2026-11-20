@@ -11,7 +11,7 @@ import { TextField } from '@/components/ui/text-field';
 import type { Project } from '../_data/project-api';
 import { ProjectTable, type RankedProject } from './project-table';
 
-const PROJECTS_PER_PAGE = 7;
+const PROJECTS_PER_PAGE = 8;
 
 export interface ProjectListClientProps {
   projects: Project[];
