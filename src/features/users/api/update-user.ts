@@ -1,6 +1,25 @@
 import { requestServerApi } from '@/lib/api/server-client';
+import type { ApiErrorCode } from '@/lib/api/types';
 
 import type { EditValues } from '../validation/user-edit';
+
+/** 참가자 수정 API의 팀 번호 제한 코드를 보존하고 나머지 오류는 기존 공통 코드로 변환합니다.
+ * @param status HTTP 응답 상태 코드
+ * @param rawCode 백엔드 오류 코드
+ * @returns 화면에서 구분할 오류 코드
+ */
+function resolveUpdateUserErrorCode(
+  status: number,
+  rawCode?: string,
+): ApiErrorCode | 'TEAM_NUMBER_MANAGED_BY_PROJECT' {
+  if (status === 400 && rawCode === 'TEAM_NUMBER_MANAGED_BY_PROJECT') return rawCode;
+  if (rawCode === 'INVALID_INPUT' || rawCode === 'UNAUTHORIZED' || rawCode === 'FORBIDDEN')
+    return rawCode;
+  if (status === 400) return 'INVALID_INPUT';
+  if (status === 401) return 'UNAUTHORIZED';
+  if (status === 403) return 'FORBIDDEN';
+  return 'UNKNOWN_ERROR';
+}
 
 /** 사용자 수정 API의 전체 교체 요청입니다. */
 export interface UpdateUserRequest {
@@ -36,10 +55,14 @@ export function toUpdateUserRequest(values: EditValues): UpdateUserRequest {
  * @returns 수정 성공 여부와 실패 시 오류 정보
  */
 export function updateUser(userId: string, accessToken: string, values: EditValues) {
-  return requestServerApi<null>(`/backoffice/api/v1/users/${encodeURIComponent(userId)}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: toUpdateUserRequest(values),
-    responseType: 'empty',
-  });
+  return requestServerApi<null, ApiErrorCode | 'TEAM_NUMBER_MANAGED_BY_PROJECT'>(
+    `/backoffice/api/v1/users/${encodeURIComponent(userId)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: toUpdateUserRequest(values),
+      responseType: 'empty',
+      resolveErrorCode: resolveUpdateUserErrorCode,
+    },
+  );
 }
