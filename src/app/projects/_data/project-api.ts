@@ -94,6 +94,21 @@ export function requestProjectDetail(
   );
 }
 
+/** 인증된 관리자의 프로젝트 삭제 요청을 백오피스 API로 전송합니다.
+ * @param accessToken 관리자 인증 토큰
+ * @param projectId 삭제할 프로젝트 ID
+ * @returns 삭제 성공 여부와 실패 시 오류 정보
+ */
+export function requestDeleteProject(
+  accessToken: string,
+  projectId: string,
+): Promise<ApiResult<unknown>> {
+  return requestServerApi<unknown>(`/backoffice/api/v1/projects/${encodeURIComponent(projectId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
 /** 프로젝트 목록 응답의 필수 필드를 확인합니다.
  * @param payload 서버의 성공 응답
  * @returns 검증된 프로젝트 목록 또는 형식 오류
