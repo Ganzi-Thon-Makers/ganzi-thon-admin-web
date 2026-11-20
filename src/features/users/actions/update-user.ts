@@ -37,17 +37,19 @@ export async function updateUserAction(
   const result = await updateUser(userId, accessToken, parsed.data);
   if (!result.ok) {
     const message =
-      result.status === 409
-        ? '이미 사용 중인 아이디입니다.'
-        : result.status === 400
-          ? '입력값을 확인해 주세요.'
-          : result.status === 401
-            ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
-            : result.status === 403
-              ? '수정 권한이 없습니다.'
-              : result.status === 404
-                ? '사용자를 찾을 수 없습니다.'
-                : '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+      result.code === 'TEAM_NUMBER_MANAGED_BY_PROJECT'
+        ? result.message
+        : result.status === 409
+          ? '이미 사용 중인 아이디입니다.'
+          : result.status === 400
+            ? '입력값을 확인해 주세요.'
+            : result.status === 401
+              ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+              : result.status === 403
+                ? '수정 권한이 없습니다.'
+                : result.status === 404
+                  ? '사용자를 찾을 수 없습니다.'
+                  : '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return { ok: false, message };
   }
 
