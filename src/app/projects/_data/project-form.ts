@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { normalizeProjectServiceUrl } from './project-url';
+
 export const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024;
 export const ALLOWED_THUMBNAIL_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -21,7 +23,20 @@ export const projectFormSchema = z.object({
     .enum(['WEB', 'APP'], { error: '서비스 유형을 선택해 주세요.' })
     .nullable()
     .refine(Boolean, '서비스 유형을 선택해 주세요.'),
-  serviceUrl: z.string().max(500, '500자 이하로 입력해 주세요.'),
+  serviceUrl: z
+    .string()
+    .max(500, '500자 이하로 입력해 주세요.')
+    .refine(
+      /** 빈 값 또는 HTTP(S) 서비스 주소인지 확인합니다.
+       * @param value 입력한 주소
+       * @returns 저장 가능한 주소인지 여부
+       */
+      function isValidServiceUrl(value) {
+        const normalized = normalizeProjectServiceUrl(value);
+        return !value.trim() || Boolean(normalized && normalized.length <= 500);
+      },
+      '올바른 서비스 URL을 입력해 주세요.',
+    ),
   teamNumber: z.number().int().min(1).max(30).nullable().refine(Boolean, '팀을 선택해 주세요.'),
   teamName: z
     .string()

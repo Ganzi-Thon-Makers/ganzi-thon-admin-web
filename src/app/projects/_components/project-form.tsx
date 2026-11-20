@@ -28,7 +28,7 @@ import { ImageThumbnail } from '@/components/ui/image-thumbnail';
 import { TextField } from '@/components/ui/text-field';
 
 import type { ProjectSaveResult } from '../_actions/save-project';
-import type { ProjectMember } from '../_data/project-api';
+import type { ProjectMember, ProjectPart } from '../_data/project-api';
 import {
   getProjectFormSchema,
   type ProjectFormValues,
@@ -74,6 +74,21 @@ const TEAM_NUMBERS = Array.from({ length: 30 }, createTeamNumber);
 const fullWidthField =
   'w-full max-w-none self-stretch gap-[10px] [&_[data-slot=field-label]]:text-body-sb-16';
 const fieldLabel = 'text-body-sb-16 text-gray-200';
+const PART_LABELS: Record<ProjectPart, string> = {
+  PLAN: '기획',
+  DESIGN: '디자인',
+  WEB: '웹',
+  APP: '앱',
+  SERVER: '서버',
+};
+
+/** 후보의 영문 파트 코드를 화면에 표시할 한글 이름으로 바꿉니다.
+ * @param part 후보 또는 기존 팀원의 파트
+ * @returns 한글 파트명
+ */
+function getPartLabel(part: ProjectPart | null | undefined): string {
+  return part ? PART_LABELS[part] : '파트 미확인';
+}
 
 /** 로그인 쿠키를 사용하는 내부 GET 경로에서 팀원 후보를 가져옵니다.
  * @param keyword 이름 검색어
@@ -240,7 +255,7 @@ export function ProjectForm({
             return member.userId === id;
           },
         );
-        return `${candidate?.part ?? original?.part ?? '파트 미확인'} · ${candidate?.name ?? original?.name ?? '확인 필요'}`;
+        return `${getPartLabel(candidate?.part ?? original?.part)} ${candidate?.name ?? original?.name ?? '확인 필요'}`;
       },
     )
     .join(', ');
@@ -359,6 +374,7 @@ export function ProjectForm({
     const selected = Number(teamNumber);
     const nextTeamNumber = availableTeamNumbers.includes(selected) ? selected : null;
     if (nextTeamNumber === selectedTeamNumber) return;
+    if (mode === 'create') setValue('memberIds', [], { shouldDirty: true, shouldValidate: true });
     setValue('teamNumber', nextTeamNumber, {
       shouldDirty: true,
       shouldValidate: true,
@@ -586,7 +602,7 @@ export function ProjectForm({
                     id="project-team"
                     disabled={availableTeamNumbers.length === 0 || Boolean(teamError)}
                     triggerState={selectedTeamNumber ? 'entered' : 'default'}
-                    className={`h-12 w-full cursor-pointer rounded-[4px] bg-gray-900 px-4 py-0 text-body-r-16 ${selectedTeamNumber ? 'text-gray-500' : ''}`}
+                    className={`h-12 w-full cursor-pointer rounded-[4px] bg-gray-900 px-4 py-0 text-body-r-16 ${selectedTeamNumber ? 'text-static-white' : ''}`}
                   >
                     {selectedTeamNumber
                       ? `${String(selectedTeamNumber).padStart(2, '0')}팀`
@@ -706,7 +722,7 @@ export function ProjectForm({
                                   className="peer sr-only"
                                 />
                                 <span className="w-full rounded-sm py-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gray-300">
-                                  {candidate.part ?? '파트 미확인'} · {candidate.name}
+                                  {getPartLabel(candidate.part)} {candidate.name}
                                 </span>
                               </label>
                             </AccordionListItem>
@@ -746,7 +762,7 @@ export function ProjectForm({
                         className="flex items-center gap-2 rounded-[4px] bg-gray-900 px-3 py-2 text-body-r-14"
                       >
                         <span>
-                          {candidate?.part ?? original?.part ?? '파트 미확인'} ·{' '}
+                          {getPartLabel(candidate?.part ?? original?.part)}{' '}
                           {candidate?.name ?? original?.name ?? '확인 필요'}
                         </span>
                         <button

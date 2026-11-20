@@ -1,6 +1,7 @@
 import { requestServerApi } from '@/lib/api/server-client';
 
 import type { ProjectFormValues } from './project-form';
+import { normalizeProjectServiceUrl } from './project-url';
 
 /** 프로젝트 저장 API에 전달하는 JSON 파트입니다. */
 export interface ProjectSaveRequest {
@@ -26,9 +27,12 @@ export function toProjectSaveRequest(
 ): ProjectSaveRequest {
   if (values.teamNumber === null || values.platform === null)
     throw new Error('필수 입력값을 확인해 주세요.');
+  const serviceUrl = normalizeProjectServiceUrl(values.serviceUrl);
+  if (values.serviceUrl.trim() && (!serviceUrl || serviceUrl.length > 500))
+    throw new Error('서비스 URL을 확인해 주세요.');
   return {
     title: values.title,
-    serviceUrl: values.serviceUrl.trim() || null,
+    serviceUrl,
     teamName: values.teamName,
     teamNumber: values.teamNumber,
     memberIds,
