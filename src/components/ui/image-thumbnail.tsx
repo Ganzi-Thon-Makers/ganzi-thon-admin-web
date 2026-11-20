@@ -20,6 +20,8 @@ export interface ImageThumbnailProps extends ButtonHTMLAttributes<HTMLButtonElem
   accept?: string;
   /** 사용자가 새 이미지 파일을 선택했을 때 호출되는 콜백 함수 */
   onImageChange?: (file: File) => void;
+  /** 이미지 위에 표시할 문구 */
+  displayLabel?: string;
 }
 
 export function ImageThumbnail({
@@ -28,6 +30,7 @@ export function ImageThumbnail({
   alt = '대표 이미지',
   accept = 'image/*',
   onImageChange,
+  displayLabel,
   className,
   onClick,
   disabled,
@@ -137,7 +140,7 @@ export function ImageThumbnail({
               height={showEmptyOverlay ? 36 : 42}
             />
             <span className="font-sans text-body-sb-16 text-white">
-              {showEmptyOverlay ? '대표 이미지 등록' : '대표 이미지 수정'}
+              {displayLabel ?? (showEmptyOverlay ? '대표 이미지 등록' : '대표 이미지 수정')}
             </span>
           </span>
         ) : null}

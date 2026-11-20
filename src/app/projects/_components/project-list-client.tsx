@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { type ChangeEvent, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -183,11 +184,10 @@ export function ProjectListClient({ projects, initialKeyword }: ProjectListClien
           ) : null}
         </div>
         <Button
-          type="button"
-          disabled
-          aria-label="프로젝트 등록 기능 준비 중"
+          nativeButton={false}
+          render={<Link href="/projects/create" />}
           size="sm"
-          className="h-12 w-34 rounded-[4px] px-6 text-body-sb-16 text-static-white disabled:pointer-events-auto disabled:cursor-pointer disabled:bg-red-500 disabled:text-static-white disabled:opacity-100"
+          className="h-12 w-34 rounded-[4px] px-6 text-body-sb-16 text-static-white"
         >
           프로젝트 등록
         </Button>

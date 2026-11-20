@@ -12,6 +12,7 @@ import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
 
 import type { ProjectDetail, ProjectPart } from '../_data/project-api';
+import { normalizeProjectServiceUrl } from '../_data/project-url';
 
 interface ProjectDetailViewProps {
   project: ProjectDetail;
@@ -51,7 +52,7 @@ function ProjectThumbnail({ url, title }: ProjectThumbnailProps) {
           fill
           unoptimized
           sizes="(max-width: 1024px) 100vw, 40vw"
-          className="object-cover"
+          className="object-contain"
           onError={handleImageError}
         />
       ) : (
@@ -145,13 +146,7 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
     },
   );
 
-  let serviceUrl: URL | null = null;
-  try {
-    serviceUrl = project.serviceUrl ? new URL(project.serviceUrl) : null;
-  } catch {
-    serviceUrl = null;
-  }
-  const hasServiceUrl = serviceUrl?.protocol === 'https:' || serviceUrl?.protocol === 'http:';
+  const serviceUrl = normalizeProjectServiceUrl(project.serviceUrl);
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-50">
@@ -180,9 +175,7 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
               <div className="flex w-full min-w-0 items-start justify-between gap-4">
                 <div className="min-w-0">
                   <h2 className="text-display-sb-32 break-words text-gray-50">{project.title}</h2>
-                  <p className="mt-2 text-title-m-20 break-words text-gray-300">
-                    {project.teamName}
-                  </p>
+                  <p className="text-title-m-24 break-words text-gray-300">{project.teamName}</p>
                   <p className="mt-1 text-body-r-16 text-gray-300">
                     {project.teamNumber}팀 · 득표 {project.voteCount}표
                   </p>
@@ -201,9 +194,9 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
               <p className="mt-4 w-full text-body-r-16 break-words whitespace-pre-wrap text-gray-300">
                 {project.description || '상세 설명이 없습니다.'}
               </p>
-              {hasServiceUrl && serviceUrl ? (
+              {serviceUrl ? (
                 <a
-                  href={serviceUrl.href}
+                  href={serviceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-8 inline-flex h-[29px] w-32 items-center justify-center gap-1 rounded-[100px] bg-gray-300 px-1 text-body-sb-14 text-gray-900 hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-ring"
@@ -280,7 +273,8 @@ export function ProjectDetailView({ project, role, loginId }: ProjectDetailViewP
               프로젝트 삭제
             </Button>
             <Button
-              type="button"
+              nativeButton={false}
+              render={<Link href={`/projects/${project.id}/edit`} />}
               size="lg"
               className="h-12 w-[136px] rounded-[4px] bg-red-500 px-6 text-body-sb-16"
             >
